@@ -1,33 +1,61 @@
-# Node.js
-node_modules
+# Dependencies and package-manager state
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+
+# Build and test output
+.next/
+out/
+dist/
+.turbo/
+coverage/
+playwright-report/
+test-results/
+
+# Runtime and framework caches
+.cache/
+.vercel/
+.wrangler/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Build output
-dist
-.next
-out
+# Local databases and generated state
+supabase/.branches/
+supabase/.temp/
 
-# Prisma
-/prisma/generated/
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Logs
-*.log
-
-# OS / Editor files
+# OS and editor state
 .DS_Store
 Thumbs.db
 *.swp
+*.swo
+.idea/
 
 # Temporary files
+tmp/
 tmp.md
-tmp
+
+# Private local workspace
+_local/
+
+# Private operational receipts are not part of the published source tree.
+/docs/operations/evidence/
+/.backup-output/
+
+# Preserved legacy working directories. Their tracked implementation was
+# replaced by apps/*; ignored caches, secrets, and nested Git metadata remain.
+/frontend/
+/backend/

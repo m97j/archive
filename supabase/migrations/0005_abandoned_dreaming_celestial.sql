@@ -1,0 +1,1 @@
+CREATE INDEX "render_artifacts_search_fts_idx" ON "render_artifacts" USING gin (to_tsvector('simple', "search_text"));

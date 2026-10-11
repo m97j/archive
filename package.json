@@ -1,0 +1,41 @@
+{
+  "name": "archive",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A public research archive and evidence-backed personal site.",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=11 <12"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "clean": "turbo run clean",
+    "dev": "turbo run dev --parallel",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:contract": "turbo run test:contract",
+    "test:e2e": "playwright test",
+    "test:integration": "turbo run test:integration",
+    "test:unit": "turbo run test:unit",
+    "typecheck": "turbo run typecheck",
+    "supabase:start": "pnpm dlx supabase@latest start",
+    "supabase:stop": "pnpm dlx supabase@latest stop",
+    "supabase:status": "pnpm dlx supabase@latest status"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "tsup": "^8.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^4.0.0"
+  }
+}

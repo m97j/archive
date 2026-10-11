@@ -1,0 +1,46 @@
+{
+  "name": "@archive/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build --webpack",
+    "clean": "node -e \"require('node:fs').rmSync('.next',{recursive:true,force:true})\"",
+    "dev": "next dev --turbopack",
+    "lint": "eslint .",
+    "start": "next start",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@archive/contracts": "workspace:*",
+    "@archive/ui": "workspace:*",
+    "@codemirror/lang-markdown": "^6.0.0",
+    "@codemirror/state": "^6.0.0",
+    "@codemirror/view": "^6.0.0",
+    "@supabase/ssr": "0.10.2",
+    "@supabase/supabase-js": "^2.0.0",
+    "katex": "0.18.10",
+    "next": "16.3.8",
+    "next-intl": "^4.0.0",
+    "next-themes": "^0.4.0",
+    "mermaid": "11.17.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.0.0",
+    "@types/node": "catalog:",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint-config-next": "16.3.8",
+    "jsdom": "^26.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

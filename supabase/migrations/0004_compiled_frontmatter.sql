@@ -1,0 +1,1 @@
+ALTER TABLE "render_artifacts" ADD COLUMN "frontmatter" jsonb DEFAULT '{}'::jsonb NOT NULL;

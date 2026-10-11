@@ -1,0 +1,27 @@
+{
+  "name": "archive-node24",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-24-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true
+    }
+  },
+  "containerEnv": {
+    "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"
+  },
+  "postCreateCommand": "corepack enable && corepack prepare pnpm@11.25.0 --activate && pnpm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bradlc.vscode-tailwindcss",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
+        "ms-playwright.playwright",
+        "tamasfe.even-better-toml"
+      ]
+    }
+  },
+  "forwardPorts": [3000, 54321, 54322, 54323, 54324, 7860]
+}

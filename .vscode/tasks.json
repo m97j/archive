@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "archive: dev",
+      "type": "shell",
+      "command": "pnpm dev",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "archive: verify",
+      "type": "shell",
+      "command": "pnpm lint && pnpm typecheck && pnpm test",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "supabase: start",
+      "type": "shell",
+      "command": "pnpm supabase:start",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Web: Next.js",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm --filter @archive/web dev"
+    },
+    {
+      "name": "API: Fastify",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm --filter @archive/api dev"
+    },
+    {
+      "name": "Worker",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm --filter @archive/worker dev"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Archive: web + api",
+      "configurations": ["Web: Next.js", "API: Fastify"]
+    }
+  ]
+}

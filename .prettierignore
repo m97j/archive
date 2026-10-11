@@ -1,0 +1,3 @@
+apps/web/next-env.d.ts
+supabase/migrations/meta/*.json
+infra/huggingface/connection-probe/prisma/generated/

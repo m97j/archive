@@ -1,0 +1,55 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788278799529,
+      "tag": "0000_archive_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788278869829,
+      "tag": "0001_lineage_constraints",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788338328139,
+      "tag": "0002_outbox_leases",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788340362895,
+      "tag": "0003_revision_workflow",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788341059612,
+      "tag": "0004_compiled_frontmatter",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788405241861,
+      "tag": "0005_abandoned_dreaming_celestial",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791691664150,
+      "tag": "0006_server_only_access",
+      "breakpoints": true
+    }
+  ]
+}

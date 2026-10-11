@@ -1,0 +1,32 @@
+{
+  "name": "@archive/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "dev": "tsx watch src/main.ts",
+    "lint": "eslint .",
+    "start": "node dist/main.js",
+    "test": "vitest run --passWithNoTests",
+    "test:integration": "vitest run tests/integration --passWithNoTests",
+    "test:unit": "vitest run tests/unit --passWithNoTests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@archive/content-engine": "workspace:*",
+    "@archive/contracts": "workspace:*",
+    "@archive/db": "workspace:*",
+    "@archive/observability": "workspace:*",
+    "@aws-sdk/client-s3": "^3.0.0",
+    "pino": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "^4.0.0",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
