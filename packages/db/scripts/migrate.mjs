@@ -11,6 +11,7 @@ import { databaseInventory } from "./backup.mjs";
 import { resolve, dirname } from "node:path";
 import { sha256 } from "./backup-format.mjs";
 import { deploymentConnection } from "./deployment-connection.mjs";
+import { failureStatus } from "./check-password.mjs";
 
 const apply = process.argv.includes("--apply");
 const folder = fileURLToPath(new URL("../../../supabase/migrations/", import.meta.url));
@@ -69,6 +70,7 @@ try {
   console.error(
     JSON.stringify({
       error: /^[A-Z_]+$/.test(error.message ?? "") ? error.message : "MIGRATION_FAILED",
+      status: failureStatus(error),
       databaseUrlLogged: false,
     }),
   );

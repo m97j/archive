@@ -142,6 +142,9 @@ The GitHub `Production` environment needs `HF_TOKEN` for Space sync and
 Drizzle migration workflow. Run it with `apply=false` first; this only verifies migration history.
 If `ARCHIVE_DATABASE_URL` is absent, the workflow can construct the measured Session pooler
 URL from the existing `POSTGRES_PASSWORD` secret; this value must be the database password.
+Plan failures report a sanitized authentication/network/TLS status, never a raw PostgreSQL error
+or password. If credentials are rejected, update the GitHub production secret through its secure
+settings interface rather than extracting another platform's runtime secrets or bypassing TLS.
 Do not enable a second production migration path via Supabase native GitHub integration.
 See [backup and private research data](private-data.md) for key recovery and retention.
 
