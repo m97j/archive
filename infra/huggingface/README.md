@@ -37,10 +37,12 @@ The current database owner can serve it; a future non-owner runtime role needs e
 scoped grants/policies. Owners/BYPASSRLS identities are not restricted by RLS itself.
 
 Migration `0007_fixed_function_search_path.sql` adds function-search-path hardening without
-modifying rows; production application remains pending the guarded backup/migration workflow.
+modifying application rows. The guarded backup/migration workflow applied it on 2026-10-11;
+production SQL confirmed the three fixed search paths and legacy-data preservation.
 Real administrator API creation, revision, approval, compilation, publication and reversible
-archive/restore checks passed on 2026-10-11. New Web release cache and browser session checks
-remain separate gates, not consequences of a successful API or Docker health check.
+archive/restore checks passed on 2026-10-11, as did deployed cache updates and browser Server
+Actions. Password login-form and session-refresh checks remain unverified; the Supabase Security
+Advisor UI rescan was not independently observed. See the dated evidence in deployment readiness.
 
 The legacy **Variable name** `AZURE_STORAGE_KEY` was observed, without printing the value.
 If real, revoke/rotate it and remove it from Variables. Needed replacements belong in Secrets;

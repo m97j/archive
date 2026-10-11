@@ -2,7 +2,7 @@
 
 `Archive` is a multilingual research archive, engineering portfolio, and evidence-backed
 publishing system. Anonymous visitors receive a document-first public site; the owner uses a
-Supabase-authenticated admin workspace for authoring, taxonomy, review, compilation, and
+Supabase-authenticated admin workspace for authoring, review, compilation, and
 publication.
 
 ## Architecture

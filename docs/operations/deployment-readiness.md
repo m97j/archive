@@ -36,10 +36,10 @@ The real API/worker Docker release runs successfully: health and public PostgreS
 unauthenticated gateway access was denied, and missing/invalid admin user JWTs were rejected.
 On 2026-10-11, authenticated administrator API checks passed for content creation, two revision
 cycles, review/approval, compilation, publication, public resolution, and reversible archive/restore.
-The original 22 migrated drafts retained their exact fingerprints. Vercel rendered the first test
-revision, but the previous Web deployment failed subsequent cache-update/removal checks. The new
-locale-tag invalidation fix passed local production-mode tests; deployed cache verification and
-browser login-form/session-refresh checks remain separate release gates.
+Browser administrator Server Actions and deployed Web cache update/removal checks also passed
+after release. The post-hardening check preserved all 26 pre-existing content fingerprints, including
+the 22 migrated legacy drafts. Password login-form and session-refresh checks remain unverified;
+the separate database hardening migration also passed as recorded below.
 The name `AZURE_STORAGE_KEY` was observed among legacy HF Variables, without printing
 its value. If real, revoke/rotate it and remove it from Variables; needed replacements belong
 in Secrets. Private conversion cannot undo a previous credential disclosure.
@@ -66,11 +66,45 @@ source, revision history and publication rows while removing the record from pub
 catalogs and navigation. Access changes emit cache-invalidation events just like publication.
 No production credential belongs in Git.
 
-The administrator has completed a real Supabase Auth sign-in for the API checks, including
-publication. Browser form submission, refreshed-cookie behavior, and cache update/removal checks
-against the new Web release remain pending. Test doubles and an isolated PostgreSQL-compatible
-database supplement those checks but do not replace them. Public cache invalidation is asynchronous; it cannot retract a
-page already downloaded by a visitor or force an already open tab to refresh.
+The administrator has completed a real Supabase Auth sign-in. API and authenticated browser
+authoring/publication checks passed using that session. These do not establish password login-form
+submission or refresh of an expired session. Test doubles and an isolated PostgreSQL-compatible
+database supplement the production checks but do not replace them. Public cache invalidation is
+asynchronous; it cannot retract a page already downloaded by a visitor or force an already open
+tab to refresh.
+
+### 2026-10-11 release evidence
+
+- [Main release `c69d2d6`](https://github.com/m97j/archive/commit/c69d2d6) passed CI and deployed
+  successfully to Vercel and private `archive-core`. The running HF source revision is `9db9b7d`.
+- The real browser workflow passed create, review, approval, compilation, publication, public
+  viewing, archive, restore, and cleanup through Next.js Server Actions. It reused the authenticated
+  administrator session; password entry through the login form and session-refresh behavior were
+  not tested.
+- Production API-driven publication of revision 2 appeared on the Web within **3.72 seconds** in
+  this smoke test. All four synthetic test URLs returned `404` from both the API and Web after
+  cleanup. The 24 pre-existing record fingerprints, including all 22 migrated legacy drafts,
+  remained unchanged. This timing is an observation, not a latency guarantee or load benchmark.
+- The earlier Web deployment served revision 1 but failed later cache update/removal checks.
+  The new locale-tag invalidation release passed those production checks; an already open browser
+  tab still requires navigation or refresh to obtain the changed document.
+- [First database apply attempt](https://github.com/m97j/archive/actions/runs/38138535646) failed
+  because the runner could not locate `postgresql-client-17`, before backup or migration ran.
+  Release `c69d2d6` adds the signed PostgreSQL PGDG package repository and pins the client major
+  version rather than using an incompatible fallback.
+- [Corrected database apply run](https://github.com/m97j/archive/actions/runs/38139044286) succeeded.
+  Its fresh application backup was restored into isolated PostgreSQL and all 31 application/history
+  table fingerprints matched. AES-256-GCM encryption/decryption verification, a hash-verified
+  private HF dataset upload, and a verified local encrypted copy completed before release recovery
+  was considered preserved. The backup covers `public` and `drizzle`; managed Auth and Storage
+  are excluded and unchanged.
+- Migration `0007_fixed_function_search_path.sql` was applied on 2026-10-11. Production SQL
+  verification confirmed the three fixed function search paths and preserved legacy data.
+  The Supabase Security Advisor UI rescan was not independently observed.
+- After hardening, the real administrator API workflow passed again with all 26 pre-existing
+  fingerprints unchanged, including the original 22 migrated drafts. Revision 2 appeared on the
+  Web within 0.53 seconds in that check, and reversible private/archive cleanup passed. Together
+  with the earlier 3.72-second observation, this verifies behavior, not a performance guarantee.
 
 ## Owner login and device access
 
@@ -201,8 +235,9 @@ Migration `0007_fixed_function_search_path.sql` pins an empty `search_path` for 
 trigger functions. Their bodies use only PostgreSQL built-ins and trigger rows; they do not
 resolve application tables or custom types. This is an additive hardening migration, not a
 change to already-applied migration files, function bodies, data, or trigger definitions.
-Its presence in source does not mean it has been applied to production: use the guarded backup
-and migration workflow and recheck Security Advisor afterward.
+The guarded backup/migration workflow applied it on 2026-10-11. Production SQL verification
+confirmed the three function-local search paths and preserved legacy data. The Security Advisor
+UI rescan was not independently observed; refresh that view to confirm its presentation separately.
 
 The separate **Leaked Password Protection Disabled** warning concerns Supabase Auth passwords,
 not RLS, JWKS, or the PostgreSQL connection password. Supabase's

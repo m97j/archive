@@ -37,8 +37,8 @@ Supabase Auth user with the verified `archive_admin` role, not the Vercel accoun
 dashboard account, or PostgreSQL database password. There is no sign-up interface; the owner
 confirmed hosted public sign-up disabled on 2026-10-11.
 
-Real administrator API authoring/publication checks passed separately. Browser login-form,
-session-refresh, and new-release cache validation remain pending; see
+Real administrator API authoring/publication, deployed cache update/removal, and browser Server
+Action checks passed. Password login-form and session-refresh checks remain unverified; see
 [owner login and device access](../../docs/operations/deployment-readiness.md#owner-login-and-device-access).
 
 ## Environment variables
