@@ -1,0 +1,23 @@
+{
+  "name": "archive-read-only-connection-probe",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "prisma generate --schema prisma/schema.prisma",
+    "test": "node --test probe.test.mjs",
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "@supabase/supabase-js": "2.117.3",
+    "drizzle-orm": "0.45.2",
+    "kysely": "0.29.6",
+    "pg": "8.23.0",
+    "postgres": "3.4.9"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "prisma": "7.10.0"
+  }
+}

@@ -1,69 +1,48 @@
-# 🧠 Portfolio
+# Archive
 
-👉 Full portfolio site: [minjae-portfolio.vercel.app](https://minjae-portfolio.vercel.app)
+`Archive` is a multilingual research archive, engineering portfolio, and evidence-backed
+publishing system. Anonymous visitors receive a document-first public site; the owner uses a
+Supabase-authenticated admin workspace for authoring, taxonomy, review, compilation, and
+publication.
 
----
+## Architecture
 
-## 📦 Repository Purpose
-This repository contains the **portfolio site code** and deployment configuration:
+- **Web:** Next.js on Vercel (`https://marchivej.vercel.app` planned)
+- **Core:** Fastify API and compilation/outbox worker in a private Hugging Face Docker Space
+- **Data/Auth:** Supabase PostgreSQL and Auth
+- **Media:** Imgur inline images, with an optional Cloudflare R2 presigned-upload adapter
+- **Private recovery data:** Encrypted backups in a private HF dataset; keys stored separately
+- **Content:** Markdown compiled into sanitized HTML with code, math, Mermaid, YouTube, images,
+  and sandboxed Hugging Face demos
 
-- `frontend/` — Next.js client (deployed on Vercel, SSR-based dynamic pages)  
-- `backend/` — Node.js API server (deployed on Hugging Face Spaces)  
-- `infra/` — Azure Bicep modules + GitHub Actions workflows (initial cloud deployment history)  
-- `guides/` — Project tag guide and documentation  
-- `docs/` — Fallback portfolio documents (English/Korean)
+The source is a pnpm/Turborepo monorepo. `apps/web` is public-facing and contains the protected
+owner console; `apps/api` is the authorization and domain boundary; `apps/worker` handles durable
+background compilation and publication events.
 
----
+## Local verification
 
-## 🏗️ Architecture & Deployment
-- **Current setup**:  
-  - Frontend → Vercel (Next.js SSR, dynamic rendering with Markdown parsing)  
-  - Backend → Hugging Face Spaces (Node.js, CRUD + auth + admin dashboard)  
-  - Database → Supabase (PostgreSQL, persistent storage)  
+```text
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm build
+```
 
-- **Flow**:  
-  Client UI → Backend API → Database  
-  - CRUD operations are performed by the backend, while the frontend provides UI/UX.  
-  - Admin & edit pages, authentication, and category-based rendering are handled server-side.  
+Environment templates live beside each application. Never commit real tokens or database
+credentials.
 
-- **History**:  
-  Initially deployed on **Azure (frontend, backend, PostgreSQL DB)** using Bicep modules and GitHub Actions.  
-  Due to cost considerations, migrated to free platforms (Vercel, HF Spaces, Supabase) for 24/365 stable hosting.  
-  Azure deployment scripts remain in `infra/` and `.github/workflows/` as archived references.
+## Documentation
 
----
+- [Deployment readiness](docs/operations/deployment-readiness.md)
+- [Static fallback portfolio](docs/index.md)
+- [Static fallback operations](docs/operations/static-fallback.md)
+- [Current platform topology](docs/architecture/platform-topology.md)
+- [Cost-driven Azure to PaaS decision](docs/decisions/0001-cost-optimized-paas.md)
+- [Historical Azure IaC](infra/legacy/azure/README.md)
+- [Historical GitHub Actions](.github/workflow-archive/azure/README.md)
 
-## 📖 Portfolio Docs (Fallback)
-In case the portfolio site is unavailable, you can view the full portfolio documents here:
+## 한국어 요약
 
-- [English Version](docs/en/README.md)  
-- [Korean Version](docs/ko/README.md)  
-
----
-
-## 🧰 Tech Stack
-
-### Frontend
-- **Language**: TypeScript
-- **Framework**: Next.js (React-based)
-- **Deployment**: Vercel
-
-### Backend
-- **Language**: TypeScript (Node.js runtime)
-- **Framework**: Express.js
-- **ORM / DB Tooling**: Prisma
-- **Deployment**: Hugging Face Spaces (Docker-based)
-
-### Database
-- **Service**: Supabase (PostgreSQL)
-
-### Infra / DevOps
-- **Version Control**: Git, GitHub
-- **CI/CD**: GitHub Actions (Workflows)
-- **Cloud (Early Implementation Experience)**: Azure (Bicep IaC, automated deployment)
-
----
-
-## 📩 Contact
-- Email: **mmnkjiae@gmail.com**  
-- GitHub: [github.com/m97j](https://github.com/m97j)
+공개 영역은 블로그·연구자 개인 사이트·포트폴리오·기술/학술 문서 아카이브로 사용하고,
+로그인한 관리자 영역은 콘텐츠 작성·검토·게시용 GUI/CMD로 사용합니다. 과거 Azure 기반
+IaaS형 구성과 현재의 저비용 PaaS 구성은 모두 포트폴리오 기록으로 보존합니다.

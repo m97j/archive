@@ -1,0 +1,79 @@
+name: Deploy private HF Space
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      space_repository:
+        description: Hugging Face Space owner/name
+        required: true
+        default: m97j/archive-core
+
+permissions:
+  contents: read
+
+concurrency:
+  group: archive-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: Check out Archive
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Assemble Space build context
+        run: |
+          mkdir -p .hf-source/apps .hf-source/packages .hf-source/infra/huggingface
+          cp package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json .npmrc .dockerignore .hf-source/
+          cp -R apps/api apps/worker .hf-source/apps/
+          cp -R packages/contracts packages/content-engine packages/db packages/observability .hf-source/packages/
+          cp infra/huggingface/Dockerfile .hf-source/Dockerfile
+          cp infra/huggingface/start.mjs .hf-source/infra/huggingface/start.mjs
+          cp infra/huggingface/SPACE_README.md .hf-source/README.md
+
+      - name: Push build context to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_REPOSITORY: ${{ inputs.space_repository || 'm97j/archive-core' }}
+        run: |
+          test -n "$HF_TOKEN"
+          python - <<'PY'
+          import json, os, urllib.request
+          from urllib.parse import quote
+          repository = os.environ["HF_SPACE_REPOSITORY"]
+          if repository != "m97j/archive-core":
+              raise SystemExit("Production sync is restricted to m97j/archive-core")
+          request = urllib.request.Request(
+              "https://huggingface.co/api/spaces/" + quote(repository, safe="/"),
+              headers={"Authorization": "Bearer " + os.environ["HF_TOKEN"]},
+          )
+          with urllib.request.urlopen(request, timeout=20) as response:
+              metadata = json.load(response)
+          if metadata.get("private") is not True:
+              raise SystemExit("archive-core deployment requires private visibility")
+          PY
+          AUTH_HEADER="$(printf 'oauth2:%s' "$HF_TOKEN" | base64 -w0)"
+          echo "::add-mask::$AUTH_HEADER"
+          git -c http.extraHeader="Authorization: Basic $AUTH_HEADER" clone \
+            "https://huggingface.co/spaces/$HF_SPACE_REPOSITORY" .hf-space
+          # Preserve previous sources; Git history and existing files are not deleted.
+          rsync -a --exclude=.git/ .hf-source/ .hf-space/
+          cd .hf-space
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "deploy: archive core ${GITHUB_SHA::12}"
+          git -c http.extraHeader="Authorization: Basic $AUTH_HEADER" push origin HEAD:main

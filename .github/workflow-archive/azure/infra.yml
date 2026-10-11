@@ -2,10 +2,10 @@ name: Provision Azure Infrastructure
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
-      - 'infra/**'
-      - '.github/workflows/infra.yml'
+      - "infra/**"
+      - ".github/workflows/infra.yml"
   workflow_dispatch:
 
 jobs:
@@ -142,4 +142,5 @@ jobs:
               backendAppName="mj-portfolio-backend" \
               frontendOutboundIps="${{ steps.frontendIps.outputs.ips }}" \
             --debug
-# 
+
+#

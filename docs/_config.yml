@@ -1,0 +1,9 @@
+title: Archive
+description: Research, applied AI, and engineering portfolio
+theme: jekyll-theme-minimal
+show_downloads: false
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default

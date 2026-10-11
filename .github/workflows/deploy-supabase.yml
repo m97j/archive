@@ -1,0 +1,88 @@
+name: Plan or apply verified database migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Apply after a fresh backup is restored, encrypted and preserved
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: archive-production
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: Production
+    services:
+      restore:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_USER: archive_restore
+          POSTGRES_DB: archive_restore
+          POSTGRES_PASSWORD: disposable-restore-only
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U archive_restore -d archive_restore"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: ${{ secrets.ARCHIVE_DATABASE_URL }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      ARCHIVE_DATABASE_HOST: aws-1-ap-south-1.pooler.supabase.com
+      ARCHIVE_DATABASE_USER: postgres.spffrdgttkhlwgosuvix
+      ARCHIVE_BACKUP_DIRECTORY: ${{ runner.temp }}/archive-backup
+      ARCHIVE_BACKUP_RECEIPT: ${{ runner.temp }}/archive-backup/receipt.json
+      ARCHIVE_BACKUP_ENCRYPTION_KEY: ${{ secrets.ARCHIVE_BACKUP_ENCRYPTION_KEY }}
+      ARCHIVE_RESTORE_PASSWORD: disposable-restore-only
+    steps:
+      - name: Check out Archive
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - name: Install workspace dependencies
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+      - name: Verify migration history and preview changes
+        run: node packages/db/scripts/migrate.mjs
+      - name: Install PostgreSQL 17 client
+        if: ${{ inputs.apply }}
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client-17
+          pg_dump --version
+      - name: Restore-test and encrypt a fresh backup
+        if: ${{ inputs.apply }}
+        run: node packages/db/scripts/backup.mjs
+      - name: Store encrypted recovery artifact
+        if: ${{ inputs.apply }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: encrypted-database-backup-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/archive-backup/application.dump.aesgcm
+            ${{ runner.temp }}/archive-backup/receipt.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Preserve encrypted backup in private dataset
+        if: ${{ inputs.apply }}
+        env:
+          HF_DATASET_TOKEN: ${{ secrets.HF_DATASET_TOKEN }}
+          HF_PRIVATE_DATASET_REPOSITORY: m97j/archive-private-data
+        run: |
+          python -m pip install huggingface-hub==1.15.0
+          python packages/db/scripts/upload-private-backup.py
+      - name: Apply canonical Drizzle migrations
+        if: ${{ inputs.apply }}
+        run: node packages/db/scripts/migrate.mjs --apply

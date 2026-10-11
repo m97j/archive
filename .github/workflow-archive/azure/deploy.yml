@@ -2,15 +2,15 @@ name: Deploy Frontend & Backend to Azure
 
 on:
   workflow_run:
-    workflows: ["Provision Azure Infrastructure"]   # infra.yml의 name과 동일
+    workflows: ["Provision Azure Infrastructure"] # infra.yml의 name과 동일
     types:
       - completed
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
-      - 'frontend/**'
-      - 'backend/**'
-      - '.github/workflows/**'
+      - "frontend/**"
+      - "backend/**"
+      - ".github/workflows/**"
   workflow_dispatch:
 
 jobs:
@@ -58,7 +58,7 @@ jobs:
           context: ./frontend
           push: true
           tags: portfolioacrn3r0m8x.azurecr.io/frontend:latest
-          no-cache: true  
+          no-cache: true
 
       - name: Update Frontend App
         run: |
@@ -96,7 +96,7 @@ jobs:
           context: ./backend
           push: true
           tags: portfolioacrn3r0m8x.azurecr.io/backend:latest
-          no-cache: true   
+          no-cache: true
 
       - name: Update Backend App
         run: |

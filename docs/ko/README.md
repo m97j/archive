@@ -1,68 +1,91 @@
-# 🧠 [Tech Portfolio](https://minjae-portfolio.vercel.app)
- 
-지능적인 AI 시스템을 만들기 위한 프로젝트 모음집입니다.  
-(세부 구현 및 설명은 각 프로젝트 repo에 포함되어 있습니다)
-
+---
+title: Archive — 정적 포트폴리오
+permalink: /ko/
 ---
 
-## 🧰 Tech Stack
-- **Languages**: C++, C#, Java, Python, JavaScript...  
-- **AI / ML**: TensorFlow, PyTorch, HuggingFace, scikit-learn...  
-- **Web**: React, Node.js, next.js, Flask...  
-- **Game Engines**: Unity, Unreal Engine(학습 중)  
-- **Infra / Cloud**: Git, AWS, Azure, MongoDB, MySQL...  
+# Archive — 정적 포트폴리오
 
----
+[홈](../) · [프로젝트 태그](project-tags.html) · [English](../en/)
 
-## 🔖 [Project Tag Guide](../../guides/ko)
+이 문서는 [Archive](https://marchivej.vercel.app)의 정적 fallback입니다. 주 서비스가 일시적으로
+접근되지 않더라도 GitHub 저장소와 GitHub Pages에서 핵심 프로젝트와 연구 방향을 확인할 수
+있도록, 외부 서비스에 의존하지 않는 간결한 요약만 담습니다.
 
----
+## 관심 영역
 
-## 🚀 Projects
+중심 연구는 검증 가능한 환경에서 에이전트의 추론·계획·학습을 측정하고 개선하는 것입니다.
+다음 문제를 하나의 연구 프로그램과 보조 프로젝트로 연결합니다.
 
-### 🔴 AI Projects
-- [🖇 HAR Safety AI <🔴[🖇📷]>](https://github.com/m97j/har-safety-ai)  
-  **멀티모달 포즈-이미지 융합 기반 행동 인식 모델**  
-  → OpenPose 기반 포즈 시퀀스 + RGB 이미지 시퀀스 융합  
-  → **2단계 학습 전략**: 포즈 사전학습(MPOSE) → 멀티모달 파인튜닝(HAA500)  
-  → Factorized Attention + 경량 CNN으로 **실시간 위험 행동 인식** 구현  
-  → 산업 안전, 공공 안전, 스포츠 분석 등 다양한 도메인 확장 가능  
-  → Capstone 프로젝트 확장, 범용 HAR 모델 학습 ~~및 서비스 서버 배포~~[진행 예정]  
-  🔗 [HF Model](https://huggingface.co/m97j/har-safety-model) · [Model Card](https://huggingface.co/m97j/har-safety-model)
+- 재현 가능한 post-training과 비교 실험
+- 규칙에 기반한 추론, 계획과 deterministic verification
+- 부분 관측 환경의 belief-state 및 closed-loop interaction
+- 지각·검색·대화·행동을 연결하는 보조 지능형 시스템
+- 연구 주장과 실행 artifact를 연결하는 평가·재현성 인프라
 
-- [🗣 Persona Chat Engine <🔴[🗣🎨]⚫🔷>](https://github.com/m97j/persona-chat-engine)  
-  게임 내 NPC 상호작용을 위한 **AI 대화 엔진**  
-  → Transformer 기반 LLM + (Q)LoRA 파인튜닝, Delta/Flag 멀티헤드 학습  
-  → FastAPI 서버 + Hugging Face Spaces 배포 (Dockerfile 자동 빌드)  
-  → NPC 신뢰도·관계·퀘스트 이벤트 반영 대화, RAG 기반 컨텍스트 검색  
-  🔗 [HF Spaces](https://huggingface.co/spaces/m97j/PersonaChatEngine_hf-serve) · [Model Card](https://huggingface.co/m97j/npc_LoRA-fps)
+## Lead project
 
-- [🗣 Pragmatic LLM Search <🔴[🗣🖇]🟢>](https://github.com/m97j/pragmatic-llm-search)  
-  오픈소스 LLM 기반 검색+요약 챗봇 (7B~10B급 모델)  
-  → RAG 구조 설계, QLoRA/DPO 튜닝, 검색+리랭킹+컨텍스트 구성  
-  → Hugging Face Space SaaS 프로토타입 배포 (Triton, Docker)
+### [Axiom World](https://github.com/m97j/axiom-world)
 
-### 🔷 Game Development
-- [🕹 FPS Game <🔷[🕹🎯🗺🎮]⚫🟢>](https://github.com/m97j/fpsgame)  
-  Unity 기반 1인칭 슈팅(FPS) 프로젝트 (Beta Release)  
-  → **FSM → Behavior Tree → ML-Agents PPO**로 확장된 적 AI 설계 및 강화학습 적용  
-  → Node.js + MongoDB 기반 클라이언트-서버 구조, 다중 맵 플레이, 무기 시스템 구현  
-  → GitFlow 전략과 모듈화된 디렉토리 구조로 협업·확장성 고려  
-  🔗 [시연 영상](https://youtu.be/98fkWuGhLA0) · [Release](https://github.com/m97j/FpsGame/releases/tag/v0.2-beta)
+완전히 검증 가능한 toy world에서 rule-grounded planning을 연구하는 사전등록 연구 프로젝트입니다.
+Protocol v1은 single-GPU 조건에서 general reasoning SFT 후 task SFT를 수행하는 2단계 방식과 직접
+task tuning을 비교하고, 동결된 평가 suite·artifact lineage·3-seed 확인으로 결론을 검증했습니다.
+DPO의 제한적 효과와 verifier-rewarded GRPO의 성능 저하도 실패 분석과 함께 공개합니다. 다음
+Protocol v2는 부분 관측 환경에서 명시적 belief-state와 closed-loop planning을 연구합니다.
 
-### 🟠 Web & Cloud
-- [🖥️ Kakao Login Web Service <🟠⚫>](https://github.com/m97j/WSD4_kakao_login_auth) — React + Node.js + MongoDB
-- ~~[☁️ Image Conversion Service <🟠⚫🟢🔴[📷]>](https://github.com/m97j/cloudapp) — Flask + AWS EC2~~[추가예정]  
+[Tech report](https://github.com/m97j/axiom-world/blob/main/docs/reports/v1/axiom-world-tech-report-v1.md) ·
+[사전등록 protocol](https://github.com/m97j/axiom-world/blob/main/docs/protocols/v1/experiment_protocol_v1.md) ·
+[HF collection](https://huggingface.co/collections/m97j/axiom-world)
 
-### 🎓 Academic Projects  
-- [📘 Artificial Intelligence <🔴>](https://github.com/m97j/pacman-ai) — pacman game에서 탐색/전략 알고리즘 구현 + DQN 확장 구현 
-- [📘 Machine Learning <🔴>](https://github.com/m97j/ml-assignments) — 고전 ML 알고리즘 구현  
-- [📘 Data Mining <🔴⚫>](https://github.com/m97j/dm-assignments) — PageRank, 추천 시스템, Kaggle 실습  
-- [📘 Natural Language Processing <🔴[🗣]>](https://github.com/m97j/nlp-assignments) — tokenizer, 한글 오토마타, 교내 kaggle 대회 참가  
+## 보조 프로젝트
 
+### [Archive](https://github.com/m97j/archive)
 
----
+다국어 기술·학술 문서, 프로젝트 증거, 연구 기록을 하나의 분류 체계로 관리하는 개인 지식
+플랫폼입니다. Next.js, Fastify, PostgreSQL/Supabase, Hugging Face Spaces, Cloudflare R2와
+IaC/CI 파이프라인을 사용합니다.
 
-## 📩 Contact
-- Email: **mmnkjiae@gmail.com**  
-- GitHub: [github.com/m97j](https://github.com/m97j)  
+### [Uni-HAR](https://github.com/m97j/uni-har)
+
+자세 시퀀스와 RGB 영상의 정보를 결합하는 멀티스케일 Human Action Recognition 모델입니다.
+시간·공간 factorized attention, 장기 시계열 집계, 선택적 cross-attention 융합을 다룹니다.
+[모델 카드](https://huggingface.co/m97j/uni-har)
+
+### [CWIE](https://github.com/m97j/cwie)
+
+대화 생성과 함께 신뢰도·관계·이벤트 상태 변화를 예측하는 게임 세계 상호작용 엔진입니다.
+LLM 미세조정, 상태 전이, RAG 기반 해석, symbolic/neural 서비스 분리를 실험합니다.
+[Symbolic demo](https://huggingface.co/spaces/m97j/symbolic-processor) ·
+[Neural demo](https://huggingface.co/spaces/m97j/neuro-engine) ·
+[모델 카드](https://huggingface.co/m97j/cwie-core)
+
+### [Pragmatic Agent](https://github.com/m97j/pragmatic-agent)
+
+로컬 검색과 웹 검색을 조합하고, planner와 generator 역할을 분리하여 출처 기반 답변·요약·번역을
+생성하는 RAG 에이전트입니다. BM25/dense retrieval, reranking, 검색 예산과 캐시를 다룹니다.
+[데모](https://huggingface.co/spaces/m97j/pragmatic-agent)
+
+### [ATC](https://github.com/m97j/atc)
+
+Unity 게임플레이, Node.js 백엔드, MongoDB와 적 AI를 연결한 full-stack 게임 프로젝트입니다.
+FSM과 Behavior Tree에서 ML-Agents PPO 정책으로 확장하며 규칙 기반·학습 기반 행동을 비교합니다.
+[시연 영상](https://youtu.be/98fkWuGhLA0)
+
+## 기초 구현 기록
+
+- [Machine Learning](https://github.com/m97j/ml-assignments): ID3와 Naive Bayes 직접 구현
+- [Data Mining](https://github.com/m97j/dm-assignments): Apriori, PageRank, SVD/NCF 추천
+- [Natural Language Processing](https://github.com/m97j/nlp-assignments): BPE, 한글 오토마타,
+  KoELECTRA 분류
+
+## 분류 원칙
+
+프로젝트 이름에 이모지 조합을 붙이는 기존 방식 대신, lead research program과 보조 연구
+트랙·엔지니어링 역할·증거 상태를 구분합니다. 자세한 기준은
+[프로젝트 태그](project-tags.html)에 있습니다.
+
+Kakao 로그인과 Pacman 저장소는 삭제된 것이 아니라 비공개로 전환한 학교 과제물이며, 공개
+fallback의 주요 증거 목록에서는 제외합니다.
+
+GitHub: [m97j](https://github.com/m97j) · English: [English portfolio](../en/)
+
+_최종 검토: 2026-09-06_

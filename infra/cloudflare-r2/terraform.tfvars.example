@@ -1,0 +1,7 @@
+cloudflare_api_token = "set-with-TF_VAR_cloudflare_api_token-instead"
+account_id           = "a604ebdf46c7c0f3945cb5c3b833bad2"
+bucket_name          = "archive-image"
+allowed_origins = [
+  "http://localhost:3000",
+  "https://marchivej.vercel.app",
+]
