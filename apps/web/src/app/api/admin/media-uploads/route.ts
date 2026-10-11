@@ -5,6 +5,15 @@ import { getAdminSession } from "@/lib/admin-auth.server";
 import { ArchiveApiError, archiveApiRequest } from "@/lib/archive-api.server";
 
 export async function POST(request: Request) {
+  // Unlike Server Actions, Route Handlers do not get Next.js's automatic Origin check.
+  // This cookie-authenticated endpoint is used only by the same-origin browser editor.
+  if (request.headers.get("origin") !== new URL(request.url).origin) {
+    return NextResponse.json({ error: "Same-origin request required" }, { status: 403 });
+  }
+  const contentType = request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
+  if (contentType !== "application/json") {
+    return NextResponse.json({ error: "JSON request required" }, { status: 415 });
+  }
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 

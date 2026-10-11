@@ -1,8 +1,8 @@
 # Deployment readiness
 
 > **2026-10-11 measured decision:** Keep Vercel + private HF archive-core + Supabase,
-> using **Drizzle + pg + Session pooler**. The previous blanket PostgreSQL deployment hold
-> and Railway preference are superseded by actual HF runtime tests. Production schema and
+> using **Drizzle + pg + Session pooler**. Connectivity was verified inside the HF runtime
+> rather than inferred from the published networking policy. Production schema and
 > preservation checks passed; the API/worker release and Web smoke test are tracked separately.
 
 ## Current verified state
@@ -21,8 +21,9 @@ The persistent worker favors Session mode; no HTTPS/RPC fallback or platform cha
 Before migration the database had four legacy tables without RLS. A consistent application
 backup was restored in a separate PostgreSQL 17 instance and every row fingerprint matched.
 The backup is preserved locally and encrypted in private `m97j/archive-private-data`.
-All seven Drizzle migrations were then applied. Migration `0006_server_only_access.sql` enables
-it on new/legacy tables and revokes direct access from `anon`, `authenticated` and `PUBLIC`.
+The initial seven Drizzle migrations (`0000` through `0006`) were then applied. Migration
+`0006_server_only_access.sql` enables RLS on new/legacy tables and revokes direct access from
+`anon`, `authenticated` and `PUBLIC`.
 No permissive RLS policies are installed: readers/admins use the trusted business API.
 All 30 production public tables now have RLS enabled; the original 22 posts and migration
 history were preserved unchanged. All 22 posts were copied into the new schema as private
@@ -33,8 +34,13 @@ BYPASSRLS identities are not restricted by RLS itself.
 
 The real API/worker Docker release runs successfully: health and public PostgreSQL reads passed,
 unauthenticated gateway access was denied, and missing/invalid admin user JWTs were rejected.
-Authenticated authoring, publication and Web cache invalidation must pass before
-declaring the full release verified. The name `AZURE_STORAGE_KEY` was observed among legacy HF Variables, without printing
+On 2026-10-11, authenticated administrator API checks passed for content creation, two revision
+cycles, review/approval, compilation, publication, public resolution, and reversible archive/restore.
+The original 22 migrated drafts retained their exact fingerprints. Vercel rendered the first test
+revision, but the previous Web deployment failed subsequent cache-update/removal checks. The new
+locale-tag invalidation fix passed local production-mode tests; deployed cache verification and
+browser login-form/session-refresh checks remain separate release gates.
+The name `AZURE_STORAGE_KEY` was observed among legacy HF Variables, without printing
 its value. If real, revoke/rotate it and remove it from Variables; needed replacements belong
 in Secrets. Private conversion cannot undo a previous credential disclosure.
 
@@ -52,7 +58,7 @@ or runtime moves rather than claiming a universally supported exception. If SQL 
 a HTTPS/RPC implementation must preserve atomic revision/publication/job/outbox operations;
 independent REST calls are not an equivalent replacement for a transaction.
 
-## Historical implementation and deployment plan
+## Implementation and release verification
 
 The application implements authenticated authoring, append-only editing, reversible archive/restore,
 publication, compilation-worker, public rendering and signed cache invalidation. Archiving retains
@@ -60,20 +66,54 @@ source, revision history and publication rows while removing the record from pub
 catalogs and navigation. Access changes emit cache-invalidation events just like publication.
 No production credential belongs in Git.
 
-Publication/cache checks with a real administrator session remain pending. Test doubles and an
-isolated PostgreSQL-compatible database verify implementation behavior, not a successful production
-administrator login. Public cache invalidation is asynchronous; it cannot retract a page already
-downloaded by a visitor or force an already open tab to refresh.
+The administrator has completed a real Supabase Auth sign-in for the API checks, including
+publication. Browser form submission, refreshed-cookie behavior, and cache update/removal checks
+against the new Web release remain pending. Test doubles and an isolated PostgreSQL-compatible
+database supplement those checks but do not replace them. Public cache invalidation is asynchronous; it cannot retract a
+page already downloaded by a visitor or force an already open tab to refresh.
+
+## Owner login and device access
+
+- `/login` redirects to the default locale's login page; `/admin` redirects to its workspace.
+  With the current Korean default, these are `/ko/admin/login` and `/ko/admin`. An unauthenticated
+  workspace request redirects to the login page. Public navigation does not advertise owner links.
+- Login requires the email and password of a **Supabase Auth user**. It is not the Supabase
+  dashboard login, Vercel login, PostgreSQL database password, or a publishable/secret API key.
+  The verified provider-controlled claims must include `archive_admin`, normally in
+  `app_metadata.roles`; editable `user_metadata` cannot grant administrator access.
+- There is no sign-up UI or sign-up action. The owner confirmed hosted Supabase public sign-up
+  was switched off on 2026-10-11. Local `supabase/config.toml` also disables email and anonymous
+  sign-up; local configuration alone would not change a hosted project's Auth settings.
+- The Web server checks signed administrator claims and the core API independently verifies the
+  JWT signature, issuer, audience, and required role. The private HF gateway token authenticates
+  the Web server to the Space; it does not grant a visitor an administrator identity.
+- The server-only Auth flow uses `HttpOnly`, `SameSite=Lax` cookies and `Secure` cookies in
+  production. Administrator responses are non-cacheable, excluded from indexing, and protected
+  against framing. These controls do not make a login URL private or prove device ownership.
+- Sign-out clears the current device's session without signing out other devices. An already
+  issued access JWT can remain valid until expiry; local sign-out is not global token revocation.
+  See [Supabase sign-out semantics](https://supabase.com/docs/reference/javascript/auth-signout).
+
+The owner can log in separately on a desktop, laptop, or phone. Neither the URL nor a remembered
+browser identifies an approved physical device. A device-only login page would require a separate
+access gateway and registered-device/access policy; it is not implemented in this release.
+IP allowlists alone are a poor fit for mobile networks and changing home addresses.
+
+Supabase [Basic MFA is included on Free](https://supabase.com/pricing). TOTP enrollment, challenge,
+verification, recovery handling, and `aal2` enforcement in both the Web and API are a planned
+hardening step, not an enabled control. Enrolling a factor alone does not enforce MFA on writes;
+see [the MFA guide](https://supabase.com/docs/guides/auth/auth-mfa). Do not claim this release has
+MFA or trusted-device enforcement until those paths are implemented and tested.
 
 ## Intended deployment topology
 
-| Component       | Target                        | Publicly reachable      | Notes                                                         |
-| --------------- | ----------------------------- | ----------------------- | ------------------------------------------------------------- |
-| `apps/web`      | Vercel                        | Yes                     | Next.js frontend and signed `/api/revalidate` endpoint        |
-| `apps/api`      | Private Hugging Face Space    | HF-authorized only      | HF gateway token plus independent admin user JWT              |
-| `apps/worker`   | Same private Docker CPU Space | No inbound worker port  | Polls PostgreSQL jobs/outbox and calls the Web webhook        |
-| PostgreSQL/Auth | Supabase                      | Platform endpoints only | Migrations live in `supabase/migrations`                      |
-| Object storage  | Cloudflare R2                 | Public object reads     | Presigned browser uploads; S3 credentials remain in the Space |
+| Component       | Target                        | Publicly reachable      | Notes                                                    |
+| --------------- | ----------------------------- | ----------------------- | -------------------------------------------------------- |
+| `apps/web`      | Vercel                        | Yes                     | Next.js frontend and signed `/api/revalidate` endpoint   |
+| `apps/api`      | Private Hugging Face Space    | HF-authorized only      | HF gateway token plus independent admin user JWT         |
+| `apps/worker`   | Same private Docker CPU Space | No inbound worker port  | Polls PostgreSQL jobs/outbox and calls the Web webhook   |
+| PostgreSQL/Auth | Supabase                      | Platform endpoints only | Migrations live in `supabase/migrations`                 |
+| Media           | Imgur; optional Cloudflare R2 | Public image reads      | R2 presigned uploads; S3 credentials remain in the Space |
 
 The initial `m97j/archive-core` Docker Space runs the API and worker under the included process
 supervisor. Split them later only when independent scaling or failure isolation becomes useful.
@@ -84,7 +124,7 @@ supervisor. Split them later only when independent scaling or failure isolation 
 - HF runtime/API base: `https://m97j-archive-core.hf.space`
 - Cloudflare account ID: `a604ebdf46c7c0f3945cb5c3b833bad2`
 - R2 bucket: `archive-image`
-- Initial public media origin: `https://pub-d5bba009e2e54e8ea7cd4aff16c9eec4.r2.dev`
+- Optional R2 development read origin: `https://pub-d5bba009e2e54e8ea7cd4aff16c9eec4.r2.dev`
 - R2 S3 endpoint: `https://a604ebdf46c7c0f3945cb5c3b833bad2.r2.cloudflarestorage.com`
 
 The S3 URL shown in the Cloudflare bucket settings may include `/archive-image`; application code
@@ -147,6 +187,33 @@ or password. If credentials are rejected, update the GitHub production secret th
 settings interface rather than extracting another platform's runtime secrets or bypassing TLS.
 Do not enable a second production migration path via Supabase native GitHub integration.
 See [backup and private research data](private-data.md) for key recovery and retention.
+
+Updating a GitHub Secret does not rerun a failed job. In **Actions > Plan or apply verified
+database migrations > Run workflow**, choose `main` and leave `apply` unchecked for a read-only
+connection/history check. Repository secrets are available to the job, but a same-name
+`Production` environment secret takes precedence; update that environment value when present.
+This check does not deploy the Web app or publish content. Vercel's existing GitHub integration
+does not require local CLI login; administrator smoke tests use a separate Supabase Auth session.
+
+## Security Advisor follow-up
+
+Migration `0007_fixed_function_search_path.sql` pins an empty `search_path` for the three Archive
+trigger functions. Their bodies use only PostgreSQL built-ins and trigger rows; they do not
+resolve application tables or custom types. This is an additive hardening migration, not a
+change to already-applied migration files, function bodies, data, or trigger definitions.
+Its presence in source does not mean it has been applied to production: use the guarded backup
+and migration workflow and recheck Security Advisor afterward.
+
+The separate **Leaked Password Protection Disabled** warning concerns Supabase Auth passwords,
+not RLS, JWKS, or the PostgreSQL connection password. Supabase's
+[password security documentation](https://supabase.com/docs/guides/auth/password-security)
+limits built-in leaked-password protection to Pro and above. If the project remains Free, this
+warning cannot be removed by an Archive SQL migration. Use a unique password-manager-generated
+administrator password and review minimum strength requirements. Hosted public sign-up was
+confirmed disabled by the owner on 2026-10-11. These settings do not retroactively invalidate
+existing passwords.
+Enforcing MFA additionally requires an application assurance-level policy; enrolling a factor
+alone must not be described as API-side enforcement.
 
 ## Runtime environment matrix
 
@@ -216,9 +283,10 @@ durable remote state backend has been selected; an ephemeral Actions runner must
 copy of production state.
 
 On 2026-09-06 the HF health endpoint responded successfully, while the root HTML still referenced
-the former Portfolio Core application and `minjae-portfolio.vercel.app`. The first Space sync must
-replace that old image. The R2 public-origin root returned `404`, which is expected because R2
-public buckets do not provide a root object listing; validate with an uploaded object URL instead.
+the former Portfolio Core application and `minjae-portfolio.vercel.app`. That image was replaced
+by the combined Archive API/worker release on 2026-10-11; the original source remains in HF Git
+history. The earlier R2 public-origin root response was `404`, which is expected because R2 public
+buckets do not provide a root object listing; validate with an uploaded object URL instead.
 
 ## Research and portfolio extension direction
 
@@ -228,8 +296,8 @@ BGE reranking. Live OpenAPI exposes `/api/v1/search/`, `/api/v1/search/demo` and
 `/api/v1/health/ping`. Standalone embedding, translation, recommendation and multi-vector
 retrieval endpoints are not implemented. Its repository/runtime was inspected, not modified.
 
-The user's clarified direction is coherent: large training on Colab/Vast/Runpod, private
-Docker CPU archive-core for business jobs, and a public knowledge-engine for inference/API/demo.
+The extension architecture separates large training on Colab/Vast/Runpod, private Docker CPU
+archive-core for business jobs, and a public knowledge-engine for inference/API/demo.
 Retrieval, translation and recommendation may share one serving Space, while their source,
 data/evaluation/model cards and portfolio documentation remain three separate research projects.
 Use external APIs/pretrained baselines first; custom models require measured evaluation, not

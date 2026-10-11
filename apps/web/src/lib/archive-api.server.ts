@@ -8,6 +8,7 @@ import type {
   PublicResolution,
 } from "@archive/contracts";
 import { env } from "node:process";
+import { publicCacheTag } from "./public-cache";
 
 export class ArchiveApiError extends Error {
   override readonly name = "ArchiveApiError";
@@ -43,13 +44,19 @@ function serverHeaders(accessToken?: string): Headers {
 
 async function getJson<T>(
   path: string,
-  options: { accessToken?: string; revalidate?: number | false } = {},
+  options: { accessToken?: string; revalidate?: number | false; locale?: Locale } = {},
 ): Promise<T> {
   const response = await fetch(`${baseUrl()}${path}`, {
+    signal: AbortSignal.timeout(12_000),
     headers: serverHeaders(options.accessToken),
     ...(options.revalidate === false
       ? { cache: "no-store" }
-      : { next: { revalidate: options.revalidate ?? 60 } }),
+      : {
+          next: {
+            revalidate: options.revalidate ?? 60,
+            ...(options.locale ? { tags: [publicCacheTag(options.locale)] } : {}),
+          },
+        }),
   });
   if (!response.ok) {
     throw new ArchiveApiError(response.status, `Archive API request failed (${response.status})`);
@@ -65,7 +72,7 @@ export async function resolvePublicDocument(
   try {
     return await getJson<PublicResolution>(
       `/v1/public/resolve?${new URLSearchParams({ locale, path }).toString()}`,
-      options,
+      { ...options, locale },
     );
   } catch (error) {
     if (error instanceof ArchiveApiError && error.status === 404) return undefined;
@@ -81,7 +88,10 @@ export function listPublicDocuments(
   for (const [key, value] of Object.entries(query)) {
     if (value !== undefined) search.set(key, String(value));
   }
-  return getJson<PublicContentPage>(`/v1/public/contents?${search.toString()}`, options);
+  return getJson<PublicContentPage>(`/v1/public/contents?${search.toString()}`, {
+    ...options,
+    locale: query.locale,
+  });
 }
 
 export function getPublicNavigation(
@@ -90,7 +100,7 @@ export function getPublicNavigation(
 ): Promise<PublicNavigation> {
   return getJson<PublicNavigation>(
     `/v1/public/navigation?${new URLSearchParams(query).toString()}`,
-    options,
+    { ...options, locale: query.locale },
   );
 }
 

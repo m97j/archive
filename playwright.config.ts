@@ -2,12 +2,15 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./apps/web/tests/e2e",
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: 1,
+  timeout: 90_000,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "html",
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",
+    baseURL: "http://127.0.0.1:3010",
+    ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}),
     trace: "on-first-retry",
   },
   projects: [
@@ -15,9 +18,11 @@ export default defineConfig({
     { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
-    command: "pnpm --filter @archive/web dev",
-    reuseExistingServer: !process.env.CI,
+    command:
+      "node apps/web/tests/e2e/start-ui-server.mjs" +
+      (process.env.ARCHIVE_E2E_PRODUCTION === "1" ? " --production" : ""),
+    reuseExistingServer: false,
     timeout: 120_000,
-    url: "http://127.0.0.1:3000",
+    url: "http://127.0.0.1:3010",
   },
 });

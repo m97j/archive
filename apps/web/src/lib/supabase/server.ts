@@ -2,12 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 import { supabaseBrowserConfig } from "./config";
+import { supabaseCookieOptions } from "./cookie-options";
 
 export async function createSupabaseServerClient() {
   const config = supabaseBrowserConfig();
   if (!config) throw new Error("Supabase SSR configuration is unavailable");
   const cookieStore = await cookies();
   return createServerClient(config.url, config.publishableKey, {
+    cookieOptions: supabaseCookieOptions(),
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll(cookiesToSet) {

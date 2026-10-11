@@ -1,41 +1,68 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 
-import { ContentCard } from "@/components/content-card";
-import { listPublicDocuments } from "@/lib/archive-api.server";
+import { LatestRecords } from "@/components/latest-records";
+import { AmbientField } from "@/components/ambient-field";
+import { SelectedProjects } from "@/components/portfolio-overview";
 import { requireLocale } from "@/lib/routing";
+import { siteCopy } from "@/lib/site-copy";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const copy = siteCopy(requireLocale((await params).locale));
+  return { title: "Marchivej · Minjae", description: copy.heroDescription };
+}
 
 export default async function LocaleHome({ params }: { params: Promise<{ locale: string }> }) {
   const locale = requireLocale((await params).locale);
-  const page = await listPublicDocuments({ locale, limit: 12 });
-
+  const copy = siteCopy(locale);
   return (
-    <>
-      <section className="archive-intro">
-        <p className="eyebrow">Public knowledge record</p>
-        <h1>Ideas are easier to trust when their history stays visible.</h1>
-        <p>
-          Research, projects, and working notes—published with their evidence and revision lineage.
-        </p>
-        <Link className="text-link" href={`/${locale}/archive`}>
-          Browse the complete archive <span aria-hidden="true">→</span>
-        </Link>
-      </section>
-      <section className="latest-section" aria-labelledby="latest-heading">
-        <div className="section-heading">
-          <p className="eyebrow">Recently published</p>
-          <h2 id="latest-heading">Latest records</h2>
-          <span>{page.items.length.toString().padStart(2, "0")}</span>
-        </div>
-        {page.items.length === 0 ? (
-          <p className="empty-state">No public records have been published in this locale yet.</p>
-        ) : (
-          <div className="content-grid">
-            {page.items.map((item) => (
-              <ContentCard key={item.contentId} item={item} />
-            ))}
+    <div className="home-page">
+      <section className="home-hero" aria-labelledby="home-title">
+        <div className="intro-copy">
+          <p className="eyebrow">{copy.heroEyebrow}</p>
+          <h1 id="home-title" aria-label={copy.heroTitle}>
+            <span>{copy.heroFirst}</span>
+            <span className={locale === "ko" ? "hero-last" : "hero-last is-serif"}>
+              {copy.heroLast}
+            </span>
+          </h1>
+          <p>{copy.heroDescription}</p>
+          <div className="intro-actions">
+            <Link className="primary-link" href={`/${locale}/spaces/work`}>
+              {locale === "ko" ? "작업 둘러보기" : "Explore the work"}
+              <span aria-hidden="true">↗</span>
+            </Link>
+            <Link className="text-link" href={`/${locale}/archive`}>
+              {locale === "ko" ? "글과 노트" : "Writing & notes"}
+              <span aria-hidden="true">→</span>
+            </Link>
           </div>
-        )}
+        </div>
+        <AmbientField locale={locale} />
+        <div className="hero-bottom" aria-hidden="true">
+          <span>RESEARCH · SYSTEMS · OPEN QUESTIONS</span>
+          <span>SCROLL TO EXPLORE ↓</span>
+        </div>
       </section>
-    </>
+      <SelectedProjects locale={locale} compact />
+      <Suspense
+        fallback={
+          <section className="latest-section" aria-busy="true">
+            <h2>{copy.latest}</h2>
+            <div
+              className="record-skeleton"
+              aria-label={locale === "ko" ? "글을 불러오는 중" : "Loading writing"}
+            />
+          </section>
+        }
+      >
+        <LatestRecords locale={locale} />
+      </Suspense>
+    </div>
   );
 }

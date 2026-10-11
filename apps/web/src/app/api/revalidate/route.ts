@@ -1,10 +1,11 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 import {
   publicationRevalidationScope,
   verifyWebhookSignature,
 } from "@/lib/publication-webhook.server";
+import { publicCacheTag } from "@/lib/public-cache";
 
 const MAX_WEBHOOK_BYTES = 64 * 1024;
 
@@ -33,8 +34,11 @@ export async function POST(request: Request) {
 
   const scope = publicationRevalidationScope(event);
   if (scope) {
-    // Invalidating the locale layout also refreshes its home, catalogs, spaces and documents.
-    revalidatePath(`/${scope.locale}`, "layout");
+    // Publication and access changes must not serve the previous shared data on the next visit.
+    revalidateTag(publicCacheTag(scope.locale), { expire: 0 });
+    revalidatePath(`/${scope.locale}`);
+    revalidatePath(`/${scope.locale}/archive`);
+    for (const path of scope.paths) revalidatePath(path);
   }
   return NextResponse.json({ accepted: true, revalidated: scope?.paths ?? [] });
 }

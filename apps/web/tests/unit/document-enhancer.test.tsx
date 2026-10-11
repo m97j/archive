@@ -36,4 +36,10 @@ describe("DocumentEnhancer", () => {
     render(createElement(DocumentEnhancer));
     expect(document.querySelector("iframe")).not.toBeInTheDocument();
   });
+  it("makes wide tables keyboard focusable with a localized label", () => {
+    document.body.innerHTML = `<div data-compiled-document><table><tbody><tr><td>cell</td></tr></tbody></table></div>`;
+    render(createElement(DocumentEnhancer, { locale: "ko" }));
+    expect(document.querySelector("table")).toHaveAttribute("tabindex", "0");
+    expect(document.querySelector("table")).toHaveAttribute("aria-label", "가로 스크롤 가능한 표");
+  });
 });

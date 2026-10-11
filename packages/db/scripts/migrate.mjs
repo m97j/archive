@@ -12,6 +12,7 @@ import { resolve, dirname } from "node:path";
 import { sha256 } from "./backup-format.mjs";
 import { deploymentConnection } from "./deployment-connection.mjs";
 import { failureStatus } from "./check-password.mjs";
+import { legacyInventory, fixedFunctionSearchPaths } from "./migration-verification.mjs";
 
 const apply = process.argv.includes("--apply");
 const folder = fileURLToPath(new URL("../../../supabase/migrations/", import.meta.url));
@@ -34,6 +35,7 @@ try {
   const pending = files.filter(
     (file) => !applied.some((row) => Number(row.created_at) === file.folderMillis),
   );
+  let legacyDataPreserved;
   if (apply && pending.length) {
     const receiptPath = process.env.ARCHIVE_BACKUP_RECEIPT;
     if (!receiptPath) throw new Error("VERIFIED_BACKUP_RECEIPT_REQUIRED");
@@ -54,6 +56,39 @@ try {
     if (JSON.stringify(await databaseInventory(pool)) !== JSON.stringify(receipt.inventory))
       throw new Error("SOURCE_CHANGED_SINCE_BACKUP");
     await migrate(drizzle(pool), { migrationsFolder: folder });
+    legacyDataPreserved =
+      JSON.stringify(legacyInventory(await databaseInventory(pool))) ===
+      JSON.stringify(legacyInventory(receipt.inventory));
+    if (!legacyDataPreserved) throw new Error("LEGACY_DATA_PRESERVATION_CHECK_FAILED");
+  }
+  const hardenedMigration = files.find((file) =>
+    file.sql.some((statement) =>
+      statement.includes(
+        'ALTER FUNCTION "public"."archive_guard_content_revision"() SET search_path',
+      ),
+    ),
+  );
+  const hardeningApplied =
+    hardenedMigration && (apply || applied.some((row) => row.hash === hardenedMigration.hash));
+  let fixedFunctionSearchPathsVerified;
+  if (hardeningApplied) {
+    const functions = (
+      await pool.query(
+        `SELECT p.proname, p.proconfig
+      FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+      WHERE n.nspname='public' AND p.pronargs=0 AND p.proname=ANY($1::text[])`,
+        [
+          [
+            "archive_prevent_immutable_history_mutation",
+            "archive_guard_content_revision",
+            "archive_guard_localized_revision",
+          ],
+        ],
+      )
+    ).rows;
+    fixedFunctionSearchPathsVerified = fixedFunctionSearchPaths(functions);
+    if (!fixedFunctionSearchPathsVerified)
+      throw new Error("FIXED_FUNCTION_SEARCH_PATH_CHECK_FAILED");
   }
   console.log(
     JSON.stringify({
@@ -64,6 +99,10 @@ try {
         .digest("hex"),
       historyVerified: true,
       applied: apply ? pending.length : 0,
+      ...(legacyDataPreserved === undefined ? {} : { legacyDataPreserved }),
+      ...(fixedFunctionSearchPathsVerified === undefined
+        ? {}
+        : { fixedFunctionSearchPathsVerified }),
     }),
   );
 } catch (error) {

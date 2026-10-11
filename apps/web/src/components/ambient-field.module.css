@@ -1,0 +1,211 @@
+.field {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-width: 0;
+  height: 30rem;
+  overflow: hidden;
+}
+
+.field::before,
+.field::after {
+  position: absolute;
+  inset: 4%;
+  z-index: -1;
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.field::before {
+  background:
+    radial-gradient(ellipse at 54% 46%, rgb(200 160 156 / 0.19), transparent 58%),
+    radial-gradient(
+      ellipse at 76% 76%,
+      color-mix(in srgb, var(--signal) 10%, transparent),
+      transparent 61%
+    );
+}
+
+.field::after {
+  inset: 18%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--canvas) 78%, transparent),
+    transparent 68%
+  );
+}
+
+.contours {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.orbits {
+  stroke: color-mix(in srgb, var(--ink) 23%, var(--line));
+  stroke-width: 0.7;
+  opacity: 0.63;
+  transform-origin: 305px 241px;
+}
+
+.orbits ellipse:last-child {
+  stroke: #c8a09c;
+  opacity: 0.56;
+}
+
+.secondaryContours {
+  stroke: color-mix(in srgb, var(--ink) 12%, var(--line));
+  stroke-width: 0.6;
+  opacity: 0.53;
+}
+
+.markers {
+  fill: var(--canvas);
+  stroke: #c8a09c;
+  stroke-width: 1;
+}
+
+.signature {
+  position: absolute;
+  top: 50%;
+  left: 51%;
+  width: 43%;
+  max-width: 15rem;
+  transform: translate(-50%, -50%) rotate(-7deg);
+  pointer-events: none;
+}
+
+.signatureImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0.95;
+  filter: drop-shadow(0 20px 28px rgb(200 160 156 / 0.12));
+}
+
+.destinations {
+  position: absolute;
+  inset: 0;
+}
+
+.destination {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, var(--line));
+  border-radius: 2rem;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--canvas) 88%, transparent);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--ink) 3%, transparent);
+  font-size: 0.73rem;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.destination svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.destination:hover {
+  border-color: #c8a09c;
+  background: var(--canvas);
+  transform: translateY(-3px);
+}
+
+.destination:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
+}
+
+.arrow {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.research {
+  top: 15%;
+  left: 15%;
+}
+
+.systems {
+  top: 48%;
+  right: 4%;
+}
+
+.notes {
+  bottom: 12%;
+  left: 22%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .orbits {
+    animation: orbital-drift 4s ease-out both;
+  }
+}
+
+@keyframes orbital-drift {
+  from {
+    transform: rotate(-3deg);
+  }
+  to {
+    transform: rotate(5deg);
+  }
+}
+
+@media (max-width: 700px) {
+  .field {
+    height: 19rem;
+  }
+
+  .signature {
+    width: 42%;
+    max-width: 10.5rem;
+  }
+
+  .research {
+    top: 12%;
+    left: 9%;
+  }
+
+  .systems {
+    right: 2%;
+  }
+
+  .notes {
+    bottom: 8%;
+    left: 13%;
+  }
+
+  .destination {
+    gap: 0.4rem;
+    padding-inline: 0.65rem;
+    font-size: 0.7rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .destination {
+    transition: none;
+  }
+
+  .destination:hover {
+    transform: none;
+  }
+}

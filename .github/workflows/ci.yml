@@ -59,3 +59,11 @@ jobs:
 
       - name: Build deployable applications
         run: pnpm build
+
+      - name: Install UI test browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Verify desktop and mobile reading flows
+        run: pnpm test:e2e
+        env:
+          ARCHIVE_E2E_PRODUCTION: "1"

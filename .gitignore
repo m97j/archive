@@ -20,6 +20,10 @@ test-results/
 *.tfstate
 *.tfstate.*
 *.tfplan
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+!*.tfvars.json.example
 
 # Environment variables and secrets
 .env
@@ -43,6 +47,13 @@ Thumbs.db
 *.swp
 *.swo
 .idea/
+
+# Shared editor defaults are tracked; personal workspace files remain local.
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
 
 # Temporary files
 tmp/

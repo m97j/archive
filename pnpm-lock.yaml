@@ -127,9 +127,6 @@ importers:
       "@archive/contracts":
         specifier: workspace:*
         version: link:../../packages/contracts
-      "@archive/ui":
-        specifier: workspace:*
-        version: link:../../packages/ui
       "@codemirror/lang-markdown":
         specifier: ^6.0.0
         version: 6.5.2
@@ -364,39 +361,6 @@ importers:
       tsup:
         specifier: "catalog:"
         version: 8.5.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(jiti@2.7.0)(postcss@8.5.26)(supports-color@7.2.0)(tsx@4.23.13)(typescript@5.9.3)(yaml@2.9.0)
-      typescript:
-        specifier: "catalog:"
-        version: 5.9.3
-      vitest:
-        specifier: "catalog:"
-        version: 4.1.11(@types/node@24.13.3)(jsdom@26.1.0(supports-color@7.2.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
-
-  packages/test-utils:
-    devDependencies:
-      tsup:
-        specifier: "catalog:"
-        version: 8.5.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(jiti@2.7.0)(postcss@8.5.26)(supports-color@7.2.0)(tsx@4.23.13)(typescript@5.9.3)(yaml@2.9.0)
-      typescript:
-        specifier: "catalog:"
-        version: 5.9.3
-      vitest:
-        specifier: "catalog:"
-        version: 4.1.11(@types/node@24.13.3)(jsdom@26.1.0(supports-color@7.2.0))(vite@8.2.2(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
-
-  packages/ui:
-    devDependencies:
-      "@types/react":
-        specifier: ^19.0.0
-        version: 19.2.18
-      "@types/react-dom":
-        specifier: ^19.0.0
-        version: 19.2.5(@types/react@19.2.18)
-      react:
-        specifier: 19.2.8
-        version: 19.2.8
-      react-dom:
-        specifier: 19.2.8
-        version: 19.2.8(react@19.2.8)
       typescript:
         specifier: "catalog:"
         version: 5.9.3

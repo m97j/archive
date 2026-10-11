@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTheme } from "next-themes";
+import type { Locale } from "@archive/contracts";
+
+const diagramSources = new WeakMap<HTMLElement, string>();
 
 const blockSelector =
   '[data-render-block="mermaid"], [data-render-block="youtube"], [data-render-block="hf-demo"]';
@@ -36,7 +40,8 @@ function enhanceHuggingFace(block: HTMLElement): void {
   block.dataset.enhanced = "true";
 }
 
-export function DocumentEnhancer() {
+export function DocumentEnhancer({ locale = "en" }: { locale?: Locale }) {
+  const { resolvedTheme } = useTheme();
   useEffect(() => {
     const root = document.querySelector<HTMLElement>("[data-compiled-document]");
     if (!root) return;
@@ -47,15 +52,28 @@ export function DocumentEnhancer() {
       if (block.dataset.renderBlock === "youtube") enhanceYouTube(block);
       if (block.dataset.renderBlock === "hf-demo") enhanceHuggingFace(block);
     }
-    const diagrams = blocks.filter((block) => block.dataset.renderBlock === "mermaid");
+    for (const table of root.querySelectorAll<HTMLTableElement>("table")) {
+      table.tabIndex = 0;
+      table.setAttribute(
+        "aria-label",
+        table.caption?.textContent ||
+          (locale === "ko" ? "가로 스크롤 가능한 표" : "Horizontally scrollable table"),
+      );
+    }
+    const diagrams = [...root.querySelectorAll<HTMLElement>('[data-render-block="mermaid"]')];
     if (diagrams.length === 0) return;
     let cancelled = false;
     void import("mermaid").then(async ({ default: mermaid }) => {
-      mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "dark" });
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "strict",
+        theme: resolvedTheme === "light" ? "default" : "dark",
+      });
       for (const [index, block] of diagrams.entries()) {
         if (cancelled) return;
-        const source = block.textContent?.trim();
+        const source = diagramSources.get(block) ?? block.textContent?.trim();
         if (!source) continue;
+        diagramSources.set(block, source);
         try {
           const { svg, bindFunctions } = await mermaid.render(
             `archive-mermaid-${index}-${Math.random().toString(36).slice(2)}`,
@@ -75,7 +93,7 @@ export function DocumentEnhancer() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [locale, resolvedTheme]);
 
   return null;
 }

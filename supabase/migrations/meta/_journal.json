@@ -50,6 +50,13 @@
       "when": 1791691664150,
       "tag": "0006_server_only_access",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791716125773,
+      "tag": "0007_fixed_function_search_path",
+      "breakpoints": true
     }
   ]
 }

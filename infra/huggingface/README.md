@@ -2,8 +2,8 @@
 
 ## Verified decision — 2026-10-11
 
-Keep Vercel + private Docker CPU `archive-core` + Supabase. The earlier blanket PostgreSQL
-deployment hold is superseded by an actual HF runtime test:
+Keep Vercel + private Docker CPU `archive-core` + Supabase. Connectivity was verified inside
+the HF runtime:
 
 | Supabase route           | Drizzle/pg    | Drizzle/Postgres.js | Prisma/pg     | Kysely/pg     |
 | ------------------------ | ------------- | ------------------- | ------------- | ------------- |
@@ -27,7 +27,7 @@ exception in every future runtime. Rerun the isolated connectivity probe when ch
 The application backup was restore-tested in disposable PostgreSQL 17 before migration.
 All original rows matched, including 22 legacy posts. Original tables and HF source history
 are retained. Do not blindly restore the old Dockerfile: its startup ran Prisma migrations.
-The new seven-migration Drizzle history is canonical. New migration
+The initial seven-migration Drizzle history (`0000` through `0006`) was applied. Migration
 `0006_server_only_access.sql` enables RLS for all 26 Archive tables and the existing legacy
 tables and revokes direct access from `anon`, `authenticated` and `PUBLIC`.
 All 30 production public tables now have RLS. Original rows remain unchanged; 22 posts were
@@ -35,6 +35,12 @@ copied with exact Markdown and metadata into private drafts in the new schema, w
 No permissive RLS policy is installed: content access goes through the trusted API.
 The current database owner can serve it; a future non-owner runtime role needs explicit
 scoped grants/policies. Owners/BYPASSRLS identities are not restricted by RLS itself.
+
+Migration `0007_fixed_function_search_path.sql` adds function-search-path hardening without
+modifying rows; production application remains pending the guarded backup/migration workflow.
+Real administrator API creation, revision, approval, compilation, publication and reversible
+archive/restore checks passed on 2026-10-11. New Web release cache and browser session checks
+remain separate gates, not consequences of a successful API or Docker health check.
 
 The legacy **Variable name** `AZURE_STORAGE_KEY` was observed, without printing the value.
 If real, revoke/rotate it and remove it from Variables. Needed replacements belong in Secrets;

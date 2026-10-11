@@ -7,7 +7,7 @@ publication.
 
 ## Architecture
 
-- **Web:** Next.js on Vercel (`https://marchivej.vercel.app` planned)
+- **Web:** Next.js on Vercel ([marchivej.vercel.app](https://marchivej.vercel.app))
 - **Core:** Fastify API and compilation/outbox worker in a private Hugging Face Docker Space
 - **Data/Auth:** Supabase PostgreSQL and Auth
 - **Media:** Imgur inline images, with an optional Cloudflare R2 presigned-upload adapter
@@ -18,6 +18,36 @@ publication.
 The source is a pnpm/Turborepo monorepo. `apps/web` is public-facing and contains the protected
 owner console; `apps/api` is the authorization and domain boundary; `apps/worker` handles durable
 background compilation and publication events.
+
+## Repository layout
+
+- `apps/web` — public pages and the authenticated owner workspace
+- `apps/api` — authorization, content workflows, and media upload tickets
+- `apps/worker` — compilation jobs and publication/cache notifications
+- `packages/contracts` — shared request, response, and event schemas
+- `packages/db` — PostgreSQL schema, queries, and preservation/migration tools
+- `packages/content-engine` — Markdown parsing, rendering, and sanitization
+- `packages/observability` — shared structured logging
+- `supabase` — canonical SQL migrations and local database configuration
+- `infra` — deployment assets, optional R2 IaC, and preserved Azure infrastructure
+- `docs` — architecture, operations, and bilingual static fallback portfolio
+
+Application-specific UI stays in `apps/web`; shared packages exist only where there is an
+implemented cross-application boundary. Empty future modules are not required for extensibility.
+
+## Owner access
+
+Open `/login` or `/admin` on the public site. These shortcuts redirect to the default locale;
+the Korean login and workspace paths are `/ko/admin/login` and `/ko/admin`.
+
+Sign in with the email and password of the owner's **Supabase Auth user** whose trusted
+`app_metadata.roles` includes `archive_admin`. This is not the Supabase dashboard account,
+Vercel account, PostgreSQL database password, or an API key. There is no public sign-up UI;
+hosted Supabase sign-up was confirmed disabled by the owner on 2026-10-11.
+
+Knowing a login URL does not grant access or identify a trusted device. Both the Web server
+and core API verify administrator claims. See [owner access and security](docs/operations/deployment-readiness.md#owner-login-and-device-access)
+for session protections and the boundary between implemented controls and future MFA/device gating.
 
 ## Local verification
 
@@ -31,6 +61,11 @@ pnpm build
 Environment templates live beside each application. Never commit real tokens or database
 credentials.
 
+Root configuration files pin the workspace/runtime and keep builds, formatting, linting, and
+tests reproducible. `.vscode` contains optional shared editor tasks and recommendations, not
+personal credentials or machine-specific state. Private operational records, environment files,
+build output, and editor caches are excluded from Git.
+
 ## Documentation
 
 - [Deployment readiness](docs/operations/deployment-readiness.md)
@@ -40,9 +75,3 @@ credentials.
 - [Cost-driven Azure to PaaS decision](docs/decisions/0001-cost-optimized-paas.md)
 - [Historical Azure IaC](infra/legacy/azure/README.md)
 - [Historical GitHub Actions](.github/workflow-archive/azure/README.md)
-
-## 한국어 요약
-
-공개 영역은 블로그·연구자 개인 사이트·포트폴리오·기술/학술 문서 아카이브로 사용하고,
-로그인한 관리자 영역은 콘텐츠 작성·검토·게시용 GUI/CMD로 사용합니다. 과거 Azure 기반
-IaaS형 구성과 현재의 저비용 PaaS 구성은 모두 포트폴리오 기록으로 보존합니다.

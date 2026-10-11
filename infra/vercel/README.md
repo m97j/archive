@@ -25,6 +25,22 @@ The checked-in Web build uses Webpack because the current local Windows validati
 cannot reliably complete the Turbopack production build. Do not override the package build command
 unless the deployment proves that an override is necessary.
 
+## Deployment authentication
+
+The existing Vercel GitHub integration deploys the `main` production branch without a local
+`vercel login` session or a Vercel CLI token in GitHub Actions. CLI authentication is needed only
+for separate CLI/API administration, not for this deployment path.
+
+Administrator login is independent: `/login` redirects to `/ko/admin/login` with the current
+default locale, and `/admin` redirects to `/ko/admin`. It uses the email/password of the owner's
+Supabase Auth user with the verified `archive_admin` role, not the Vercel account, Supabase
+dashboard account, or PostgreSQL database password. There is no sign-up interface; the owner
+confirmed hosted public sign-up disabled on 2026-10-11.
+
+Real administrator API authoring/publication checks passed separately. Browser login-form,
+session-refresh, and new-release cache validation remain pending; see
+[owner login and device access](../../docs/operations/deployment-readiness.md#owner-login-and-device-access).
+
 ## Environment variables
 
 Set these in Production and use separate values for Preview where an isolated backend is

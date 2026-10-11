@@ -22,11 +22,17 @@ export function AdminLoginForm({ locale }: { locale: Locale }) {
       <input type="hidden" name="locale" value={locale} />
       <label>
         <span>Email</span>
-        <input name="email" type="email" autoComplete="username" required />
+        <input name="email" type="email" autoComplete="username" maxLength={254} required />
       </label>
       <label>
         <span>Password</span>
-        <input name="password" type="password" autoComplete="current-password" required />
+        <input
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          maxLength={1024}
+          required
+        />
       </label>
       {state.error ? (
         <p className="editor-message error" role="alert">

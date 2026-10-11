@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 
 import { DocumentEnhancer } from "@/components/document-enhancer";
+import { DocumentToc } from "@/components/document-toc";
 import { resolvePublicDocument } from "@/lib/archive-api.server";
 import { requireLocale } from "@/lib/routing";
+import { contentKindLabel, siteCopy } from "@/lib/site-copy";
 
 type PageParams = Promise<{ locale: string; slug: string[] }>;
 
@@ -22,34 +25,52 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
 }
 
 export default async function DocumentPage({ params }: { params: PageParams }) {
-  const { result } = await load(params);
+  const { locale, result } = await load(params);
   if (!result) notFound();
   if (result.type === "redirect") {
     if (result.status === 301 || result.status === 308) permanentRedirect(result.toPath);
     redirect(result.toPath);
   }
+  const copy = siteCopy(locale);
   return (
     <article className="document-page">
+      <nav className="breadcrumbs" aria-label={locale === "ko" ? "현재 위치" : "Breadcrumb"}>
+        <Link href={`/${locale}`}>{copy.home}</Link>
+        <span aria-hidden="true">/</span>
+        <Link href={`/${locale}/archive`}>{copy.allRecords}</Link>
+      </nav>
       <header>
-        <p className="eyebrow">{result.kind.replaceAll("_", " ")}</p>
+        <p className="eyebrow">{contentKindLabel(result.kind, locale)}</p>
         <h1>{result.title}</h1>
         {result.description ? <p>{result.description}</p> : null}
         <div className="document-meta">
-          <span>Revision {result.revisionNumber}</span>
+          <span>
+            {copy.revision} {result.revisionNumber}
+          </span>
           <time dateTime={result.publishedAt}>
-            Published{" "}
+            {copy.published}{" "}
             {new Intl.DateTimeFormat(result.locale, { dateStyle: "long" }).format(
               new Date(result.publishedAt),
             )}
           </time>
         </div>
       </header>
-      <div
-        className="prose"
-        data-compiled-document
-        dangerouslySetInnerHTML={{ __html: result.artifact.html }}
-      />
-      <DocumentEnhancer />
+      <div className={`document-body${result.artifact.toc.length ? " has-toc" : ""}`}>
+        <DocumentToc locale={locale} headings={result.artifact.toc} />
+        <div
+          className="prose"
+          data-compiled-document
+          dangerouslySetInnerHTML={{ __html: result.artifact.html }}
+        />
+      </div>
+      <nav
+        className="document-bottom"
+        aria-label={locale === "ko" ? "읽기 탐색" : "Reading navigation"}
+      >
+        <Link href={`/${locale}/archive`}>← {copy.back}</Link>
+        <a href="#main-content">{copy.top} ↑</a>
+      </nav>
+      <DocumentEnhancer key={result.artifact.sourceHash} locale={locale} />
     </article>
   );
 }

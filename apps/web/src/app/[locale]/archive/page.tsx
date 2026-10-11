@@ -1,21 +1,12 @@
-import type { ContentKind, Space } from "@archive/contracts";
+import { CONTENT_KINDS, SPACES, type PublicContentPage } from "@archive/contracts";
 import Link from "next/link";
 
 import { ContentCard } from "@/components/content-card";
+import { CatalogNotice } from "@/components/catalog-notice";
+import { parseArchiveSearch, searchQuery, type ArchiveSearch } from "@/lib/archive-search";
 import { listPublicDocuments } from "@/lib/archive-api.server";
 import { requireLocale } from "@/lib/routing";
-
-interface ArchiveSearch {
-  q?: string | string[];
-  kind?: string | string[];
-  space?: string | string[];
-  tag?: string | string[];
-  taxonomy?: string | string[];
-  cursor?: string | string[];
-}
-
-const one = (value: string | string[] | undefined): string | undefined =>
-  typeof value === "string" && value.trim() ? value.trim() : undefined;
+import { contentKindLabel, siteCopy } from "@/lib/site-copy";
 
 export default async function ArchivePage({
   params,
@@ -25,59 +16,129 @@ export default async function ArchivePage({
   searchParams: Promise<ArchiveSearch>;
 }) {
   const locale = requireLocale((await params).locale);
-  const search = await searchParams;
-  const q = one(search.q);
-  const kind = one(search.kind) as ContentKind | undefined;
-  const space = one(search.space)?.toUpperCase() as Space | undefined;
-  const tag = one(search.tag);
-  const taxonomy = one(search.taxonomy);
-  const cursor = one(search.cursor);
-  const page = await listPublicDocuments({
-    locale,
-    limit: 24,
-    ...(q ? { q } : {}),
-    ...(kind ? { kind } : {}),
-    ...(space ? { space } : {}),
-    ...(tag ? { tag } : {}),
-    ...(taxonomy ? { taxonomy } : {}),
-    ...(cursor ? { cursor } : {}),
-  });
-  const next = new URLSearchParams();
-  for (const [key, value] of Object.entries({ q, kind, space, tag, taxonomy })) {
-    if (value) next.set(key, value);
+  const copy = siteCopy(locale);
+  const { q, kind, space, tag, taxonomy, cursor } = parseArchiveSearch(await searchParams);
+  let page: PublicContentPage | undefined;
+  try {
+    page = await listPublicDocuments({
+      locale,
+      limit: 24,
+      ...(q ? { q } : {}),
+      ...(kind ? { kind } : {}),
+      ...(space ? { space } : {}),
+      ...(tag ? { tag } : {}),
+      ...(taxonomy ? { taxonomy } : {}),
+      ...(cursor ? { cursor } : {}),
+    });
+  } catch {
+    /* Report unavailable service separately from an empty result. */
   }
-  if (page.nextCursor) next.set("cursor", page.nextCursor);
+  const filters = { q, kind, space, tag, taxonomy };
+  const filtered = Object.values(filters).some(Boolean);
+  const next = searchQuery({ ...filters, cursor: page?.nextCursor });
 
   return (
     <section className="archive-browser">
       <div className="browser-heading">
-        <p className="eyebrow">Index</p>
-        <h1>Browse the archive</h1>
+        <p className="eyebrow">{copy.browseEyebrow}</p>
+        <h1>{copy.browseTitle}</h1>
       </div>
+      <nav className="archive-tabs" aria-label={copy.space}>
+        <Link
+          href={`/${locale}/archive?${searchQuery({ ...filters, space: undefined })}`}
+          aria-current={!space ? "page" : undefined}
+        >
+          {copy.all}
+        </Link>
+        {(["RESEARCH", "DOCS", "LOGS"] as const).map((collection) => (
+          <Link
+            key={collection}
+            href={`/${locale}/archive?${searchQuery({ ...filters, space: collection })}`}
+            aria-current={space === collection ? "page" : undefined}
+          >
+            {copy.spaces[collection]}
+          </Link>
+        ))}
+      </nav>
       <form className="search-form" action={`/${locale}/archive`}>
-        <label htmlFor="archive-query">Search titles, notes, and compiled text</label>
-        <div>
+        <label htmlFor="archive-query">{copy.query}</label>
+        <div className="search-input-row">
           <input
             id="archive-query"
             name="q"
             type="search"
             defaultValue={q}
-            placeholder="e.g. retrieval evaluation"
+            placeholder={copy.queryPlaceholder}
+            maxLength={200}
           />
-          <button type="submit">Search</button>
+          <button type="submit">{copy.search}</button>
         </div>
+        <div className="search-filters">
+          <label>
+            <span id="kind-label">{copy.kind}</span>
+            <select name="kind" aria-labelledby="kind-label" defaultValue={kind ?? ""}>
+              <option value="">{copy.all}</option>
+              {CONTENT_KINDS.map((value) => (
+                <option key={value} value={value}>
+                  {contentKindLabel(value, locale)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span id="space-label">{copy.space}</span>
+            <select name="space" aria-labelledby="space-label" defaultValue={space ?? ""}>
+              <option value="">{copy.all}</option>
+              {SPACES.map((value) => (
+                <option key={value} value={value}>
+                  {copy.spaces[value]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            {copy.tag}
+            <input
+              name="tag"
+              defaultValue={tag}
+              maxLength={100}
+              placeholder={copy.tagPlaceholder}
+            />
+          </label>
+        </div>
+        {taxonomy ? <input type="hidden" name="taxonomy" value={taxonomy} /> : null}
       </form>
+      {filtered ? (
+        <nav className="filter-chips" aria-label={copy.activeFilters}>
+          {Object.entries(filters)
+            .filter(([, value]) => value)
+            .map(([key, value]) => (
+              <Link
+                key={key}
+                href={`/${locale}/archive?${searchQuery({ ...filters, [key]: undefined })}`}
+                aria-label={`${locale === "ko" ? "필터 해제" : "Remove filter"}: ${value}`}
+              >
+                <span>
+                  {key === "space" && space
+                    ? copy.spaces[space]
+                    : key === "kind" && kind
+                      ? contentKindLabel(kind, locale)
+                      : value}
+                </span>
+                <span aria-hidden="true">×</span>
+              </Link>
+            ))}
+          <Link href={`/${locale}/archive`}>{copy.clear}</Link>
+        </nav>
+      ) : null}
       <div className="result-count" aria-live="polite">
-        {page.items.length} record{page.items.length === 1 ? "" : "s"}
-        {q ? ` matching “${q}”` : " on this page"}
+        {page ? `${copy.results}: ${page.items.length}` : copy.unavailable}
       </div>
-      {page.items.length === 0 ? (
-        <div className="empty-state">
-          <p>No records match these filters.</p>
-          <Link className="text-link" href={`/${locale}/archive`}>
-            Clear filters
-          </Link>
-        </div>
+      {!page?.items.length ? (
+        <CatalogNotice
+          locale={locale}
+          state={!page ? "unavailable" : filtered ? "filtered" : "empty"}
+        />
       ) : (
         <div className="content-grid">
           {page.items.map((item) => (
@@ -85,9 +146,14 @@ export default async function ArchivePage({
           ))}
         </div>
       )}
-      {page.nextCursor ? (
-        <Link className="next-page" href={`/${locale}/archive?${next.toString()}`}>
-          Next page <span aria-hidden="true">→</span>
+      {cursor ? (
+        <Link className="next-page" href={`/${locale}/archive?${searchQuery(filters)}`}>
+          ← {copy.previous}
+        </Link>
+      ) : null}
+      {page?.nextCursor ? (
+        <Link className="next-page" href={`/${locale}/archive?${next}`}>
+          {copy.next} <span aria-hidden="true">→</span>
         </Link>
       ) : null}
     </section>

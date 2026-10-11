@@ -1,6 +1,10 @@
 import { LOCALES, SPACES, type Locale, type Space } from "@archive/contracts";
 import { notFound } from "next/navigation";
 
+export function defaultLocale(): Locale {
+  return LOCALES.find((locale) => locale === process.env.NEXT_PUBLIC_DEFAULT_LOCALE) ?? "ko";
+}
+
 export function requireLocale(value: string): Locale {
   if (!LOCALES.some((locale) => locale === value)) notFound();
   return value as Locale;
