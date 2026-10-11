@@ -20,6 +20,14 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      - name: Validate deployment workflows
+        run: |
+          curl --fail --silent --show-error --location https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz --output "$RUNNER_TEMP/actionlint_1.7.12_linux_amd64.tar.gz"
+          curl --fail --silent --show-error --location https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_checksums.txt --output "$RUNNER_TEMP/actionlint_1.7.12_checksums.txt"
+          (cd "$RUNNER_TEMP" && sha256sum --check --ignore-missing actionlint_1.7.12_checksums.txt)
+          tar -xzf "$RUNNER_TEMP/actionlint_1.7.12_linux_amd64.tar.gz" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -shellcheck= -pyflakes= .github/workflows/*.yml
+
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:

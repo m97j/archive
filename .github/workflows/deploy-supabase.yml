@@ -38,8 +38,8 @@ jobs:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       ARCHIVE_DATABASE_HOST: aws-1-ap-south-1.pooler.supabase.com
       ARCHIVE_DATABASE_USER: postgres.spffrdgttkhlwgosuvix
-      ARCHIVE_BACKUP_DIRECTORY: ${{ runner.temp }}/archive-backup
-      ARCHIVE_BACKUP_RECEIPT: ${{ runner.temp }}/archive-backup/receipt.json
+      ARCHIVE_BACKUP_DIRECTORY: .backup-output
+      ARCHIVE_BACKUP_RECEIPT: .backup-output/receipt.json
       ARCHIVE_BACKUP_ENCRYPTION_KEY: ${{ secrets.ARCHIVE_BACKUP_ENCRYPTION_KEY }}
       ARCHIVE_RESTORE_PASSWORD: disposable-restore-only
     steps:
@@ -71,8 +71,8 @@ jobs:
         with:
           name: encrypted-database-backup-${{ github.run_id }}
           path: |
-            ${{ runner.temp }}/archive-backup/application.dump.aesgcm
-            ${{ runner.temp }}/archive-backup/receipt.json
+            ${{ env.ARCHIVE_BACKUP_DIRECTORY }}/application.dump.aesgcm
+            ${{ env.ARCHIVE_BACKUP_DIRECTORY }}/receipt.json
           retention-days: 30
           if-no-files-found: error
       - name: Preserve encrypted backup in private dataset
