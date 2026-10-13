@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ContentCard } from "@/components/content-card";
 import { CatalogNotice } from "@/components/catalog-notice";
 import { parseArchiveSearch, searchQuery, type ArchiveSearch } from "@/lib/archive-search";
-import { listPublicDocuments } from "@/lib/archive-api.server";
+import { listPublicDocuments, searchPublicDocuments } from "@/lib/archive-api.server";
 import { requireLocale } from "@/lib/routing";
 import { contentKindLabel, siteCopy } from "@/lib/site-copy";
 
@@ -19,17 +19,23 @@ export default async function ArchivePage({
   const copy = siteCopy(locale);
   const { q, kind, space, tag, taxonomy, cursor } = parseArchiveSearch(await searchParams);
   let page: PublicContentPage | undefined;
+  let searchMode: "hybrid" | "lexical" | undefined;
   try {
-    page = await listPublicDocuments({
-      locale,
-      limit: 24,
-      ...(q ? { q } : {}),
-      ...(kind ? { kind } : {}),
-      ...(space ? { space } : {}),
-      ...(tag ? { tag } : {}),
-      ...(taxonomy ? { taxonomy } : {}),
-      ...(cursor ? { cursor } : {}),
-    });
+    if (q && !kind && !space && !tag && !taxonomy && !cursor) {
+      const result = await searchPublicDocuments({ locale, q, limit: 24 });
+      page = { items: result.items };
+      searchMode = result.mode;
+    } else
+      page = await listPublicDocuments({
+        locale,
+        limit: 24,
+        ...(q ? { q } : {}),
+        ...(kind ? { kind } : {}),
+        ...(space ? { space } : {}),
+        ...(tag ? { tag } : {}),
+        ...(taxonomy ? { taxonomy } : {}),
+        ...(cursor ? { cursor } : {}),
+      });
   } catch {
     /* Report unavailable service separately from an empty result. */
   }
@@ -133,6 +139,19 @@ export default async function ArchivePage({
       ) : null}
       <div className="result-count" aria-live="polite">
         {page ? `${copy.results}: ${page.items.length}` : copy.unavailable}
+        {searchMode ? (
+          <span>
+            {" "}
+            ·{" "}
+            {searchMode === "hybrid"
+              ? locale === "ko"
+                ? "의미·키워드 검색"
+                : "Semantic + keyword search"
+              : locale === "ko"
+                ? "키워드 검색"
+                : "Keyword search"}
+          </span>
+        ) : null}
       </div>
       {!page?.items.length ? (
         <CatalogNotice

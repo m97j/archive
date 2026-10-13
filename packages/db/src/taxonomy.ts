@@ -28,6 +28,36 @@ export class ArchiveInvariantError extends Error {
   }
 }
 
+export async function listTaxonomyNodes(db: ArchiveDatabase): Promise<{ items: TaxonomyNode[] }> {
+  const nodes = await db.select().from(taxonomyNodes).limit(500);
+  const labels = await db.select().from(taxonomyNodeLabels).limit(3500);
+  const parents = await db
+    .select()
+    .from(taxonomyClosure)
+    .where(eq(taxonomyClosure.depth, 1))
+    .limit(500);
+  return {
+    items: nodes.map((node) => {
+      const parentId = parents.find((parent) => parent.descendantId === node.id)?.ancestorId;
+      return {
+        id: node.id,
+        stableKey: node.stableKey,
+        space: node.space,
+        createdAt: node.createdAt.toISOString(),
+        ...(parentId ? { parentId } : {}),
+        labels: labels
+          .filter((label) => label.nodeId === node.id)
+          .map((label) => ({
+            locale: label.locale,
+            label: label.label,
+            slug: label.slug,
+            ...(label.description === null ? {} : { description: label.description }),
+          })),
+      };
+    }),
+  };
+}
+
 export async function createTaxonomyNode(
   db: ArchiveDatabase,
   input: CreateTaxonomyNodeInput,

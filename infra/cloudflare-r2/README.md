@@ -5,6 +5,11 @@ the temporary Cloudflare-managed `r2.dev` public origin. The API produces five-m
 URLs, so R2 write credentials stay in the private HF Space. Published Markdown stores only the
 final public object URL.
 
+The upload browser now runs in the private HF CMS. Allowed upload origins are
+`https://m97j-archive-core.hf.space` and local CMS port 3001, not the reader-only Vercel app.
+If importing an existing bucket CORS configuration, add the CMS origin before testing uploads.
+Ordinary public Markdown `<img>` reads do not use this presigned-upload CORS permission.
+
 The existing deployment identifiers are:
 
 - Account ID: `a604ebdf46c7c0f3945cb5c3b833bad2` (identifier, not a credential)

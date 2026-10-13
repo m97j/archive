@@ -54,7 +54,20 @@ const fixture = createServer(async (request, response) => {
     }
     return json(response, 200, { mode });
   }
-  if (url.pathname.includes("/admin") || request.method !== "GET") return json(response, 401, {});
+  const publicSearch = url.pathname === "/v1/public/search" && request.method === "POST";
+  if (publicSearch) {
+    let text = "";
+    for await (const chunk of request) text += chunk;
+    try {
+      const input = JSON.parse(text);
+      url.searchParams.set("q", String(input.q ?? ""));
+      url.searchParams.set("locale", String(input.locale ?? "en"));
+    } catch {
+      return json(response, 400, {});
+    }
+  }
+  if (url.pathname.includes("/admin") || (request.method !== "GET" && !publicSearch))
+    return json(response, 401, {});
   if (mode === "offline" || url.searchParams.get("q") === "offline") return json(response, 503, {});
   const locale = url.searchParams.get("locale") === "ko" ? "ko" : "en";
   const title = locale === "ko" ? "읽기 환경 테스트" : "Reading environment test";
@@ -68,6 +81,12 @@ const fixture = createServer(async (request, response) => {
     publishedAt: "2026-10-01T00:00:00.000Z",
     tags: ["NLP"],
   };
+  if (publicSearch)
+    return json(response, 200, {
+      items: mode === "empty" || url.searchParams.get("q") === "none" ? [] : [item],
+      mode: "lexical",
+      providerAvailable: false,
+    });
   if (url.pathname === "/v1/public/contents")
     return json(
       response,

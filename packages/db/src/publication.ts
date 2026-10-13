@@ -5,6 +5,7 @@ import type {
   PublishedRevision,
   RevisionPublishedPayload,
 } from "@archive/contracts";
+import { isReservedPublicationPath } from "@archive/contracts";
 import { and, eq, sql } from "drizzle-orm";
 
 import type { ArchiveDatabase } from "./index.js";
@@ -24,7 +25,8 @@ export type PublicationInvariantCode =
   | "REVISION_NOT_APPROVED"
   | "TRANSLATION_NOT_REVIEWED"
   | "ARTIFACT_SOURCE_MISMATCH"
-  | "REVISION_ALREADY_PUBLISHED_AT_DIFFERENT_PATH";
+  | "REVISION_ALREADY_PUBLISHED_AT_DIFFERENT_PATH"
+  | "RESERVED_PUBLICATION_PATH";
 
 export class PublicationInvariantError extends Error {
   override readonly name = "PublicationInvariantError";
@@ -48,6 +50,11 @@ export async function publishLocalizedRevision(
   input: PublishRevisionInput,
   options: PublishRevisionOptions = {},
 ): Promise<PublishedRevision> {
+  if (isReservedPublicationPath(input.path))
+    throw new PublicationInvariantError(
+      "RESERVED_PUBLICATION_PATH",
+      "Management endpoints cannot be content publication paths",
+    );
   const now = options.now ?? new Date();
 
   return db.transaction(async (tx) => {

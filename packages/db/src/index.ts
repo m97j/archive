@@ -16,6 +16,7 @@ export * from "./catalog.js";
 export * from "./navigation.js";
 export * from "./admin-content.js";
 export * from "./content-access.js";
+export * from "./ai.js";
 export { schema };
 export { databasePoolConfig } from "./runtime-config.js";
 

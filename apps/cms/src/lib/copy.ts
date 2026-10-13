@@ -1,0 +1,43 @@
+import type { Locale } from "@archive/contracts";
+export const cmsCopy = (locale: Locale) =>
+  locale === "ko"
+    ? {
+        studio: "아카이브 스튜디오",
+        library: "콘텐츠",
+        newDraft: "새 초안",
+        jobs: "작업 큐",
+        integrations: "연결 설정",
+        preview: "미리보기",
+        signOut: "로그아웃",
+        publicSite: "공개 사이트",
+        heading: "다음 이야기를 준비하세요.",
+        subtitle: "초안은 이곳에, 발행한 글만 공개 아카이브에.",
+        empty: "아직 콘텐츠가 없습니다.",
+        active: "현재 콘텐츠",
+        archived: "보관함 포함",
+        edit: "수정본 작성",
+        title: "제목",
+        source: "Markdown 원문",
+        save: "초안 저장",
+        saving: "저장 중…",
+      }
+    : {
+        studio: "Archive studio",
+        library: "Content",
+        newDraft: "New draft",
+        jobs: "Jobs",
+        integrations: "Connections",
+        preview: "Preview",
+        signOut: "Sign out",
+        publicSite: "Public site",
+        heading: "Make room for the next idea.",
+        subtitle: "Drafts stay here. Published work belongs to the archive.",
+        empty: "No content yet.",
+        active: "Active content",
+        archived: "Include archived",
+        edit: "Create revision",
+        title: "Title",
+        source: "Markdown source",
+        save: "Save draft",
+        saving: "Saving…",
+      };

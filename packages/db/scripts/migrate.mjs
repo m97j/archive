@@ -12,7 +12,11 @@ import { resolve, dirname } from "node:path";
 import { sha256 } from "./backup-format.mjs";
 import { deploymentConnection } from "./deployment-connection.mjs";
 import { failureStatus } from "./check-password.mjs";
-import { legacyInventory, fixedFunctionSearchPaths } from "./migration-verification.mjs";
+import {
+  legacyInventory,
+  fixedFunctionSearchPaths,
+  existingApplicationRowsPreserved,
+} from "./migration-verification.mjs";
 
 const apply = process.argv.includes("--apply");
 const folder = fileURLToPath(new URL("../../../supabase/migrations/", import.meta.url));
@@ -36,6 +40,7 @@ try {
     (file) => !applied.some((row) => Number(row.created_at) === file.folderMillis),
   );
   let legacyDataPreserved;
+  let existingApplicationDataPreserved;
   if (apply && pending.length) {
     const receiptPath = process.env.ARCHIVE_BACKUP_RECEIPT;
     if (!receiptPath) throw new Error("VERIFIED_BACKUP_RECEIPT_REQUIRED");
@@ -56,10 +61,13 @@ try {
     if (JSON.stringify(await databaseInventory(pool)) !== JSON.stringify(receipt.inventory))
       throw new Error("SOURCE_CHANGED_SINCE_BACKUP");
     await migrate(drizzle(pool), { migrationsFolder: folder });
+    const after = await databaseInventory(pool);
     legacyDataPreserved =
-      JSON.stringify(legacyInventory(await databaseInventory(pool))) ===
-      JSON.stringify(legacyInventory(receipt.inventory));
+      JSON.stringify(legacyInventory(after)) === JSON.stringify(legacyInventory(receipt.inventory));
     if (!legacyDataPreserved) throw new Error("LEGACY_DATA_PRESERVATION_CHECK_FAILED");
+    existingApplicationDataPreserved = existingApplicationRowsPreserved(receipt.inventory, after);
+    if (!existingApplicationDataPreserved)
+      throw new Error("APPLICATION_DATA_PRESERVATION_CHECK_FAILED");
   }
   const hardenedMigration = files.find((file) =>
     file.sql.some((statement) =>
@@ -100,6 +108,9 @@ try {
       historyVerified: true,
       applied: apply ? pending.length : 0,
       ...(legacyDataPreserved === undefined ? {} : { legacyDataPreserved }),
+      ...(existingApplicationDataPreserved === undefined
+        ? {}
+        : { existingApplicationDataPreserved }),
       ...(fixedFunctionSearchPathsVerified === undefined
         ? {}
         : { fixedFunctionSearchPathsVerified }),

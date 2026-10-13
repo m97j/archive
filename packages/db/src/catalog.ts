@@ -48,6 +48,7 @@ const encodeCursor = (cursor: CatalogCursor): string =>
 export async function listPublicContent(
   db: ArchiveDatabase,
   query: PublicContentQuery,
+  options: { rankByQuery?: boolean } = {},
 ): Promise<PublicContentPage> {
   const limit = query.limit ?? 20;
   const conditions: SQL[] = [
@@ -126,8 +127,19 @@ export async function listPublicContent(
       localizedRevisions.title,
       localizedRevisions.description,
       publicationPointers.publishedAt,
+      renderArtifacts.id,
     )
-    .orderBy(desc(publicationPointers.publishedAt), desc(contents.id))
+    .orderBy(
+      ...(options.rankByQuery && query.q !== undefined
+        ? [
+            desc(
+              sql`ts_rank_cd(to_tsvector('simple', ${renderArtifacts.searchText}), websearch_to_tsquery('simple', ${query.q}))`,
+            ),
+          ]
+        : []),
+      desc(publicationPointers.publishedAt),
+      desc(contents.id),
+    )
     .limit(limit + 1);
 
   const hasMore = rows.length > limit;

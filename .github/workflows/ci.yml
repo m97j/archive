@@ -52,7 +52,7 @@ jobs:
         run: pnpm test
 
       - name: Verify credential and backup tools
-        run: node --test packages/db/scripts/*.node-test.mjs apps/web/scripts/*.node-test.mjs
+        run: node --test packages/db/scripts/*.node-test.mjs apps/cms/scripts/*.node-test.mjs infra/huggingface/*.node-test.mjs
 
       - name: Check production dependency advisories
         run: pnpm audit --prod --audit-level high

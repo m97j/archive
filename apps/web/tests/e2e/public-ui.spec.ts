@@ -129,7 +129,7 @@ test("document headings, tables, math and navigation remain usable at narrow wid
   await expect(page.locator(".document-page > header h1")).toBeInViewport();
 });
 
-test("collections expose active navigation and private authoring still requires sign-in", async ({
+test("collections expose active navigation and public authoring paths are absent", async ({
   page,
 }) => {
   await page.goto("/ko/spaces/work");
@@ -137,8 +137,34 @@ test("collections expose active navigation and private authoring still requires 
   if (await menuButton.isVisible()) await menuButton.click();
   await expect(page.locator('.primary-nav:visible [aria-current="page"]')).toHaveText("프로젝트");
   await expect(page.getByRole("link", { name: "Axiom World" })).toBeVisible();
-  await page.goto("/ko/admin/new");
-  await expect(page).toHaveURL(/\/ko\/admin\/login$/);
+  const response = await page.goto("/ko/admin/new");
+  expect(response?.status()).toBe(404);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("이 글을 확인할 수 없습니다.");
+  await expect(page.locator('input[type="password"]')).toHaveCount(0);
+});
+
+test("all reserved management entry points return 404 without authoring endpoints", async ({
+  request,
+}) => {
+  for (const path of [
+    "/admin",
+    "/login",
+    "/ko/admin",
+    "/en/admin/new",
+    "/ko/login",
+    "/ko/cms",
+    "/ko/sign-in",
+    "/ko/auth/callback",
+    "/ko/new",
+    "/api/admin/media-uploads",
+  ]) {
+    expect((await request.get(path)).status(), path).toBe(404);
+  }
+  expect(
+    (
+      await request.post("/api/admin/media-uploads", { data: { filename: "fixture.png" } })
+    ).status(),
+  ).toBe(404);
 });
 
 test("missing records offer useful navigation without exposing private source", async ({

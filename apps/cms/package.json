@@ -1,0 +1,43 @@
+{
+  "name": "@archive/cms",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build --webpack",
+    "clean": "node -e \"require('node:fs').rmSync('.next',{recursive:true,force:true})\"",
+    "dev": "next dev --turbopack -p 3001",
+    "start": "next start -p 3001",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@archive/contracts": "workspace:*",
+    "@archive/content-engine": "workspace:*",
+    "@codemirror/lang-markdown": "^6.0.0",
+    "@codemirror/language": "6.12.4",
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/state": "^6.0.0",
+    "@codemirror/view": "^6.0.0",
+    "@supabase/ssr": "0.10.2",
+    "@supabase/supabase-js": "^2.0.0",
+    "katex": "0.18.10",
+    "mermaid": "11.17.2",
+    "next": "16.3.8",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/node": "catalog:",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint-config-next": "16.3.8",
+    "jsdom": "^26.0.0",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

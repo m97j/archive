@@ -35,6 +35,18 @@ import {
   TaxonomyPlacementSchema,
   TranslationReviewInputSchema,
   WorkflowTransitionSchema,
+  AdminJobSchema,
+  AdminJobPageSchema,
+  HybridSearchInputSchema,
+  HybridSearchResultSchema,
+  QueueEmbeddingInputSchema,
+  QueueTranslationInputSchema,
+  isReservedPublicationPath,
+  type AdminJob,
+  type HybridSearchInput,
+  type HybridSearchResult,
+  type QueueEmbeddingInput,
+  type QueueTranslationInput,
   ContentAccessSchema,
   UpdateContentAccessInputSchema,
   type ContentAccess,
@@ -87,6 +99,8 @@ import { Type } from "@sinclair/typebox";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
+import { ProviderError } from "@archive/content-engine";
+import { registerTelemetryRoutes } from "./services/telemetry.js";
 
 export interface AuthenticatedActor {
   id: string;
@@ -126,6 +140,8 @@ export interface BuildAppOptions {
     ): Promise<MediaUploadTicket>;
   };
   archive?: {
+    listTaxonomyNodes?(): Promise<{ items: TaxonomyNode[] }>;
+    listTags?(): Promise<{ items: Tag[] }>;
     listContents(query: AdminContentQuery): Promise<AdminContentPage>;
     createTaxonomyNode(
       input: CreateTaxonomyNodeInput,
@@ -148,6 +164,12 @@ export interface BuildAppOptions {
     createEvidence(claimId: string, input: CreateEvidenceInput): Promise<Evidence>;
   };
   authenticate(request: FastifyRequest): Promise<AuthenticatedActor>;
+  ai?: {
+    enqueueEmbedding(input: QueueEmbeddingInput, actor: AuthenticatedActor): Promise<AdminJob>;
+    enqueueTranslation(input: QueueTranslationInput, actor: AuthenticatedActor): Promise<AdminJob>;
+    listJobs(): Promise<{ items: AdminJob[] }>;
+  };
+  search?: (input: HybridSearchInput) => Promise<HybridSearchResult>;
   updateContentAccess?: (
     contentId: string,
     input: UpdateContentAccessInput,
@@ -173,10 +195,33 @@ function validationMessage(error: unknown): string | undefined {
   return error.message;
 }
 
+export function sanitizedRequestLog(request: Pick<FastifyRequest, "method" | "url">) {
+  return { method: request.method, url: request.url.split("?")[0] ?? "/" };
+}
+export function sanitizedErrorLog(error: unknown) {
+  return {
+    type: "Error",
+    message: "Request error",
+    stack: "",
+    code:
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof error.code === "string" &&
+      /^[A-Z0-9_]{1,50}$/.test(error.code)
+        ? error.code
+        : "UNSPECIFIED",
+  };
+}
+
 export function buildApp(options: BuildAppOptions) {
   const app = Fastify({
     logger: options.logger
       ? {
+          serializers: {
+            req: sanitizedRequestLog,
+            err: sanitizedErrorLog,
+          },
           redact: {
             paths: [
               "req.headers.authorization",
@@ -206,7 +251,71 @@ export function buildApp(options: BuildAppOptions) {
 }
 
 function registerRoutes(app: FastifyInstance, options: BuildAppOptions): void {
+  registerTelemetryRoutes(app);
   app.get("/health", async () => ({ status: "ok" as const }));
+
+  app.post<{ Body: HybridSearchInput }>(
+    "/v1/public/search",
+    {
+      schema: { body: HybridSearchInputSchema, response: { 200: HybridSearchResultSchema } },
+      config: { rateLimit: { max: 20, timeWindow: 60000 } },
+    },
+    async (request) => {
+      if (!options.search) throw new ProviderError("SEARCH_UNAVAILABLE");
+      return options.search(request.body);
+    },
+  );
+  app.post<{ Body: QueueEmbeddingInput }>(
+    "/v1/admin/ai/embeddings",
+    {
+      schema: { body: QueueEmbeddingInputSchema, response: { 202: AdminJobSchema } },
+      config: { rateLimit: { max: 10, timeWindow: 60000 } },
+    },
+    async (request, reply) => {
+      const actor = await options.authenticate(request);
+      if (!options.ai) throw new ProviderError("AI_PROVIDER_DISABLED");
+      return reply.code(202).send(await options.ai.enqueueEmbedding(request.body, actor));
+    },
+  );
+  app.post<{ Body: QueueTranslationInput }>(
+    "/v1/admin/ai/translations",
+    {
+      schema: { body: QueueTranslationInputSchema, response: { 202: AdminJobSchema } },
+      config: { rateLimit: { max: 10, timeWindow: 60000 } },
+    },
+    async (request, reply) => {
+      const actor = await options.authenticate(request);
+      if (!options.ai) throw new ProviderError("AI_PROVIDER_DISABLED");
+      return reply.code(202).send(await options.ai.enqueueTranslation(request.body, actor));
+    },
+  );
+  app.get(
+    "/v1/admin/jobs",
+    { schema: { response: { 200: AdminJobPageSchema } } },
+    async (request) => {
+      await options.authenticate(request);
+      if (!options.ai) throw new ProviderError("AI_PROVIDER_DISABLED");
+      return options.ai.listJobs();
+    },
+  );
+  app.get(
+    "/v1/admin/taxonomy/nodes",
+    { schema: { response: { 200: Type.Object({ items: Type.Array(TaxonomyNodeSchema) }) } } },
+    async (request) => {
+      await options.authenticate(request);
+      if (!options.archive?.listTaxonomyNodes) throw new Error("Taxonomy listing is unavailable");
+      return options.archive.listTaxonomyNodes();
+    },
+  );
+  app.get(
+    "/v1/admin/tags",
+    { schema: { response: { 200: Type.Object({ items: Type.Array(TagSchema) }) } } },
+    async (request) => {
+      await options.authenticate(request);
+      if (!options.archive?.listTags) throw new Error("Tag listing is unavailable");
+      return options.archive.listTags();
+    },
+  );
 
   app.get<{ Params: { contentId: string }; Querystring: { locale: Locale } }>(
     "/v1/admin/contents/:contentId/draft",
@@ -269,6 +378,11 @@ function registerRoutes(app: FastifyInstance, options: BuildAppOptions): void {
     },
     async (request) => {
       const actor = await options.authenticate(request);
+      if (isReservedPublicationPath(request.body.path))
+        throw new PublicationInvariantError(
+          "RESERVED_PUBLICATION_PATH",
+          "Management endpoints cannot be content publication paths",
+        );
       return options.publisher.publish(request.body, actor);
     },
   );
@@ -349,6 +463,8 @@ function registerRoutes(app: FastifyInstance, options: BuildAppOptions): void {
       },
     },
     async (request, reply) => {
+      if (isReservedPublicationPath(request.query.path))
+        return reply.code(404).send({ error: "NOT_FOUND" });
       if (options.resolvePublic === undefined) throw new Error("Public resolver is unavailable");
       const result = await options.resolvePublic(request.query.locale, request.query.path);
       if (result === undefined) return reply.code(404).send({ error: "NOT_FOUND" });
@@ -539,6 +655,7 @@ function registerRoutes(app: FastifyInstance, options: BuildAppOptions): void {
   );
 
   app.setErrorHandler((error, request, reply) => {
+    if (error instanceof ProviderError) return reply.code(503).send({ error: error.code });
     if (error instanceof AuthenticationError) {
       return reply.code(401).send({ error: "UNAUTHORIZED", message: error.message });
     }

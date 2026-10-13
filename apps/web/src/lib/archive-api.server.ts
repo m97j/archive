@@ -1,11 +1,12 @@
 import type {
-  AdminContentPage,
   Locale,
   PublicContentPage,
   PublicContentQuery,
   PublicNavigation,
   PublicNavigationQuery,
   PublicResolution,
+  HybridSearchInput,
+  HybridSearchResult,
 } from "@archive/contracts";
 import { env } from "node:process";
 import { publicCacheTag } from "./public-cache";
@@ -25,18 +26,15 @@ function baseUrl(): string {
   return configured.replace(/\/$/, "");
 }
 
-function serverHeaders(accessToken?: string): Headers {
+function serverHeaders(): Headers {
   const headers = new Headers({ accept: "application/json" });
   const upstreamToken = env.ARCHIVE_API_UPSTREAM_BEARER_TOKEN?.trim();
 
   if (upstreamToken) {
     // A private HF Space consumes the standard Authorization header at its gateway.
     headers.set("authorization", `Bearer ${upstreamToken}`);
-    if (accessToken) {
-      headers.set("x-archive-user-authorization", `Bearer ${accessToken}`);
-    }
   } else {
-    const token = accessToken ?? env.ARCHIVE_API_BEARER_TOKEN?.trim();
+    const token = env.ARCHIVE_API_BEARER_TOKEN?.trim();
     if (token) headers.set("authorization", `Bearer ${token}`);
   }
   return headers;
@@ -44,11 +42,11 @@ function serverHeaders(accessToken?: string): Headers {
 
 async function getJson<T>(
   path: string,
-  options: { accessToken?: string; revalidate?: number | false; locale?: Locale } = {},
+  options: { revalidate?: number | false; locale?: Locale } = {},
 ): Promise<T> {
   const response = await fetch(`${baseUrl()}${path}`, {
     signal: AbortSignal.timeout(12_000),
-    headers: serverHeaders(options.accessToken),
+    headers: serverHeaders(),
     ...(options.revalidate === false
       ? { cache: "no-store" }
       : {
@@ -104,37 +102,17 @@ export function getPublicNavigation(
   );
 }
 
-export function listAdminContents(
-  accessToken: string,
-  includeArchived = false,
-): Promise<AdminContentPage> {
-  return getJson<AdminContentPage>(
-    `/v1/admin/contents?limit=50${includeArchived ? "&includeArchived=true" : ""}`,
-    {
-      accessToken,
-      revalidate: false,
-    },
-  );
-}
-
-/**
- * Server-side escape hatch for authenticated authoring calls. Never pass this token to a
- * Client Component; production secrets are read only from the deployment environment.
- */
-export async function archiveApiRequest<T>(
-  path: string,
-  init: RequestInit & { accessToken?: string } = {},
-): Promise<T> {
-  const headers = serverHeaders(init.accessToken);
-  new Headers(init.headers).forEach((value, key) => headers.set(key, value));
-  if (init.body !== undefined) headers.set("content-type", "application/json");
-  const response = await fetch(`${baseUrl()}${path}`, {
-    ...init,
+/** Queries stay in a request body and are never placed in the HF gateway URL. */
+export async function searchPublicDocuments(input: HybridSearchInput): Promise<HybridSearchResult> {
+  const headers = serverHeaders();
+  headers.set("content-type", "application/json");
+  const response = await fetch(`${baseUrl()}/v1/public/search`, {
+    method: "POST",
     headers,
+    body: JSON.stringify(input),
     cache: "no-store",
+    signal: AbortSignal.timeout(12_000),
   });
-  if (!response.ok) {
-    throw new ArchiveApiError(response.status, `Archive API request failed (${response.status})`);
-  }
-  return (await response.json()) as T;
+  if (!response.ok) throw new ArchiveApiError(response.status, "Archive search unavailable");
+  return (await response.json()) as HybridSearchResult;
 }

@@ -2,7 +2,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath, URL } from "node:url";
 import { readMigrationFiles } from "drizzle-orm/migrator";
-import { legacyInventory, fixedFunctionSearchPaths } from "./migration-verification.mjs";
+import {
+  legacyInventory,
+  fixedFunctionSearchPaths,
+  existingApplicationRowsPreserved,
+} from "./migration-verification.mjs";
 
 const table = (name, options = {}) => ({
   schema: "public",
@@ -29,6 +33,80 @@ test("legacy row loss, changed hashes and missing tables remain detectable", () 
     [table("Post")],
   ])
     assert.notDeepEqual(legacyInventory(after), legacyInventory(before));
+});
+
+test("application preservation checks every existing public table, not only legacy tables", () => {
+  const before = [
+    table("Post"),
+    table("contents"),
+    table("localized_revisions"),
+    table("render_artifacts"),
+  ];
+  const after = before.toReversed().map((item) => ({ ...item, rls: true }));
+  assert.equal(existingApplicationRowsPreserved(before, after), true);
+  assert.equal(
+    existingApplicationRowsPreserved(
+      before,
+      after.filter((item) => item.name !== "contents"),
+    ),
+    false,
+  );
+  assert.equal(
+    existingApplicationRowsPreserved(
+      before,
+      after.filter((item) => item.name !== "render_artifacts"),
+    ),
+    false,
+  );
+});
+
+test("application preservation rejects changed row counts and changed hashes independently", () => {
+  const before = [table("contents"), table("localized_revisions")];
+  for (const after of [
+    [table("contents", { rows: 1 }), table("localized_revisions")],
+    [table("contents", { rows: 3 }), table("localized_revisions")],
+    [table("contents"), table("localized_revisions", { sha256: "b".repeat(64) })],
+    [table("contents", { rows: 2, sha256: "b".repeat(64) }), table("localized_revisions")],
+  ])
+    assert.equal(existingApplicationRowsPreserved(before, after), false);
+});
+
+test("application preservation rejects missing, renamed and schema-moved public tables", () => {
+  const before = [table("contents")];
+  assert.equal(existingApplicationRowsPreserved(before, []), false);
+  assert.equal(existingApplicationRowsPreserved(before, [table("contents_replacement")]), false);
+  assert.equal(
+    existingApplicationRowsPreserved(before, [table("contents", { schema: "private" })]),
+    false,
+  );
+});
+
+test("application preservation accepts an additive release while ignoring RLS and migration history changes", () => {
+  const before = [table("contents"), table("__drizzle_migrations", { schema: "drizzle", rows: 8 })];
+  const after = [
+    table("publication_embeddings", { rows: 0 }),
+    table("contents", { rls: true }),
+    table("__drizzle_migrations", { schema: "drizzle", rows: 9, sha256: "b".repeat(64) }),
+  ];
+  assert.equal(existingApplicationRowsPreserved(before, after), true);
+  assert.equal(existingApplicationRowsPreserved(before, [table("contents")]), true);
+});
+
+test("application preservation permits empty initial schemas but still requires an existing empty table", () => {
+  assert.equal(existingApplicationRowsPreserved([], []), true);
+  assert.equal(existingApplicationRowsPreserved([], [table("contents", { rows: 0 })]), true);
+  const before = [table("contents", { rows: 0 })];
+  assert.equal(
+    existingApplicationRowsPreserved(before, [table("contents", { rows: 0, rls: true })]),
+    true,
+  );
+  assert.equal(existingApplicationRowsPreserved(before, []), false);
+  assert.equal(
+    existingApplicationRowsPreserved(before, [
+      table("contents", { rows: 0, sha256: "b".repeat(64) }),
+    ]),
+    false,
+  );
 });
 
 test("all three distinct functions must have an explicit empty local search path", () => {

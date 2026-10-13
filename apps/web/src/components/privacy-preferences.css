@@ -1,0 +1,53 @@
+.privacy-trigger {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0.35rem 0;
+}
+.privacy-dialog {
+  color: var(--ink);
+  background: var(--canvas);
+  width: min(35rem, calc(100% - 2rem));
+  border: 1px solid var(--line);
+  border-radius: 1.3rem;
+  padding: 1.8rem;
+}
+.privacy-dialog::backdrop {
+  background: #15102088;
+  backdrop-filter: blur(5px);
+}
+.privacy-dialog h2 {
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  letter-spacing: -0.03em;
+}
+.privacy-dialog p {
+  margin-top: 1rem;
+  line-height: 1.8;
+}
+.privacy-detail {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.privacy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+}
+.privacy-actions button {
+  flex: 1 1 11rem;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--field);
+  color: var(--ink);
+  padding: 0.7rem;
+  cursor: pointer;
+}
+.privacy-actions button:focus-visible,
+.privacy-trigger:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
+}

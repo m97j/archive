@@ -129,7 +129,10 @@ on restart and must not become the permanent business application.
 in disposable local PGlite, preserves synthetic legacy rows and verifies browser roles cannot
 read/write server-only tables. That is not a production migration or a Supabase integration test.
 
-Public `knowledge-engine` remains unchanged. Large training runs on Colab/Vast/Runpod;
+The original public `knowledge-engine` demo is preserved while authenticated, stateless
+embedding/translation endpoints are added. Their release and real-model checks are separate
+from the earlier connectivity evidence. See [private CMS rollout](../../docs/operations/private-cms.md).
+Large training runs on Colab/Vast/Runpod;
 the separate public service hosts inference, APIs and demos. Current ZeroGPU requires Gradio,
 so Docker/Python 3.11 is not converted by a hardware toggle alone. Retrieval, translation and
 recommendation may share one serving Space but keep research evaluation/model/index versions

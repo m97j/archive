@@ -3,19 +3,25 @@
 ## Current deployment target
 
 ```text
-Public reader ──> Vercel / Next.js ──> private HF Space / Fastify API ──> Supabase PostgreSQL
-                        │                            │
-                        │                            ├── compilation + outbox worker
-                        │                            └── signed R2 upload tickets
-                        │
-                        ├── Supabase Auth cookies
-                        └── public R2/Imgur media URLs
+Public reader → Vercel / Next.js → private archive-core API → Supabase PostgreSQL
+Owner → HF private access → archive-core gateway → Next.js CMS → local API
+                                             └→ API + durable worker
+Worker → authenticated knowledge-engine inference → embedding / translation
+Worker → signed Vercel webhook → published-page cache invalidation
+Reader → public Imgur / optional R2 images
 ```
 
-The public site and owner console belong in the same Next.js application. This keeps SEO-oriented
-documents server-rendered while making authoring, review, taxonomy, and publication available
-through an authenticated GUI. The HF Space should be treated as a headless core runtime, not as a
-second administration UI.
+The reader and owner console are separate Next.js applications. `apps/web` contains no owner
+authentication, editor or management API implementation. Reserved owner routes return 404.
+`apps/cms` runs alongside the API and worker inside the private Docker Space. Its GUI retains
+Supabase user authentication and independently verified `archive_admin` privileges: access to
+an HF repository is not, by itself, authorization to mutate site data.
+
+The gateway exposes port 7860, routing `/v1/*` and `/health` to the loopback Fastify API on 7861
+and other requests to the loopback CMS on 3001. The worker has no public listener. This keeps
+business APIs and CPU-bound external ML inference independently replaceable without coupling
+publication availability to model loading. Drizzle/pg retains the existing PostgreSQL transaction,
+queue, immutable-history and search capabilities; an ORM does not determine ML ecosystem support.
 
 Recommended names:
 
@@ -33,10 +39,14 @@ stable Vercel hostname. Internally, role-based names (`archive-core`, `archive-d
 
 ## Security boundaries
 
-- Browsers use Vercel; its server accesses the private Space using a server-only HF gateway token.
+- Readers use Vercel; its server accesses the private Space using a server-only HF gateway token.
   A protected Space hides source but leaves its app publicly accessible, so it is not the chosen
   boundary for the core API.
 - Every authoring endpoint verifies a Supabase JWT and the trusted `archive_admin` role.
+- Owners use the private HF app plus their Supabase Auth account, not a database password.
+  Optional remembered sessions have a 90-day inactivity and 180-day absolute cap. Access JWTs
+  remain short-lived and are refreshed; neither this option nor HF privacy makes a device trusted
+  forever. Browser storage restrictions and provider-side revocation may require login sooner.
 - R2 write credentials exist only in the HF Space. Browsers receive a short-lived URL scoped to
   one object and one PUT operation.
 - The R2 public origin is read-only and contains publishable media only.
@@ -47,6 +57,21 @@ stable Vercel hostname. Internally, role-based names (`archive-core`, `archive-d
 - Supabase service-role and database credentials are never exposed through `NEXT_PUBLIC_*`.
 - Vercel verifies worker publication events with a shared HMAC secret before invalidating caches.
 
-If the API and worker later need independent scaling, split their private runtimes without
-changing the Web/API contracts. Public knowledge-engine inference/demo services are a separate
-boundary; private content and behavioral data are not sent to public demos by default.
+`knowledge-engine` keeps its public demo while the new stateless machine endpoints require a
+separate shared inference secret. Only published content is used for embedding/translation jobs;
+translation results become new reviewable drafts, never automatic publications. Code fences,
+math, URLs and embeds are preserved; code comments are not translated by the current pipeline.
+Dense/sparse model revision and precision IDs must match. The initial exact ranking is bounded
+to 500 published candidates, with lexical fallback on cold start, failure or incompatible vectors.
+This is a small-archive implementation, not an ANN index, multi-vector or multimodal model.
+
+Optional activity collection requires both `ANALYTICS_ENABLED=true` and
+`ANALYTICS_POLICY_REVIEWED=true`; both remain off for this release. The foundation has explicit
+opt-in/withdrawal, signed consent, path-only events and a private dataset sink, not raw form text,
+search queries, IP addresses or email. Random identifiers are pseudonymous, not automatically
+anonymous. Define lawful basis, controller/contact, purpose, retention, cross-border transfers
+and operational deletion before activation. Removing a Git file alone does not erase HF history.
+This foundation is not a regulated EMR audit system or a legal compliance certification.
+
+The visual site-layout release editor, behavioral personalization and custom research models
+remain future extensions. Changing site structure/styles still requires a reviewed source release.

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isReservedPublicationPath } from "@archive/contracts";
 import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 
@@ -14,6 +15,7 @@ async function load(params: PageParams) {
   const values = await params;
   const locale = requireLocale(values.locale);
   const path = `/${locale}/${values.slug.join("/")}`;
+  if (isReservedPublicationPath(path)) notFound();
   return { locale, result: await resolvePublicDocument(locale, path) };
 }
 

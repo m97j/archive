@@ -1,11 +1,26 @@
 import { spawn } from "node:child_process";
 
 const services = [
-  ["api", "/app/api/dist/main.js"],
-  ["worker", "/app/worker/dist/main.js"],
-].map(([name, entry]) => ({
+  ["api", "/app/api/dist/main.js", { HOST: "127.0.0.1", PORT: "7861" }],
+  ["worker", "/app/worker/dist/main.js", {}],
+  [
+    "cms",
+    "/app/cms/apps/cms/server.js",
+    {
+      HOSTNAME: "127.0.0.1",
+      PORT: "3001",
+      ARCHIVE_API_BASE_URL: "http://127.0.0.1:7861",
+      ARCHIVE_API_UPSTREAM_BEARER_TOKEN: "",
+      ARCHIVE_API_BEARER_TOKEN: "",
+    },
+  ],
+  ["gateway", "/app/gateway.mjs", { PORT: "7860" }],
+].map(([name, entry, overrides]) => ({
   name,
-  process: spawn(process.execPath, [entry], { stdio: "inherit", env: process.env }),
+  process: spawn(process.execPath, [entry], {
+    stdio: "inherit",
+    env: { ...process.env, ...overrides },
+  }),
 }));
 
 let shuttingDown = false;

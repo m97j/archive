@@ -20,11 +20,19 @@ import {
   reviewTranslation,
   updateContentAccess,
   getAdminDraft,
+  enqueueEmbedding,
+  enqueueTranslation,
+  listAdminJobs,
+  listTaxonomyNodes,
+  listTags,
+  loadSearchCandidates,
 } from "@archive/db";
+import { knowledgeProviderFromEnvironment, ProviderError } from "@archive/content-engine";
 
 import { buildApp } from "./app.js";
 import { createJwtAuthenticator } from "./plugins/auth.js";
 import { createR2MediaStorage } from "./services/media-storage.js";
+import { createHybridSearch } from "./services/hybrid-search.js";
 
 function requiredEnvironment(name: string): string {
   const value = process.env[name];
@@ -68,9 +76,33 @@ async function main(): Promise<void> {
     requiredRole: process.env.PUBLISHER_ROLE ?? "archive_admin",
   });
   const media = mediaStorageFromEnvironment();
+  const provider = knowledgeProviderFromEnvironment(process.env, 6000);
   const app = buildApp({
     logger: true,
     authenticate,
+    ai: {
+      enqueueEmbedding: (input, actor) => {
+        if (!provider) throw new ProviderError("AI_PROVIDER_DISABLED");
+        return enqueueEmbedding(database.db, input.contentId, input.locale ?? "ko", actor.id);
+      },
+      enqueueTranslation: (input, actor) => {
+        if (!provider) throw new ProviderError("AI_PROVIDER_DISABLED");
+        return enqueueTranslation(database.db, input, actor.id);
+      },
+      listJobs: () => listAdminJobs(database.db),
+    },
+    search: createHybridSearch({
+      ...(provider ? { provider } : {}),
+      lexical: async (input) =>
+        (
+          await listPublicContent(
+            database.db,
+            { locale: input.locale, q: input.q, limit: 100 },
+            { rankByQuery: true },
+          )
+        ).items,
+      candidates: (locale) => loadSearchCandidates(database.db, locale),
+    }),
     updateContentAccess: (contentId, input, actor) =>
       updateContentAccess(database.db, contentId, input, actor.id),
     getAdminDraft: (contentId, locale) => getAdminDraft(database.db, contentId, locale),
@@ -98,6 +130,8 @@ async function main(): Promise<void> {
     listPublic: (query) => listPublicContent(database.db, query),
     resolveNavigation: (query) => getPublicNavigation(database.db, query),
     archive: {
+      listTaxonomyNodes: () => listTaxonomyNodes(database.db),
+      listTags: () => listTags(database.db),
       listContents: (query) => listAdminContent(database.db, query),
       createTaxonomyNode: (input, actor) => createTaxonomyNode(database.db, input, actor.id),
       placeContent: (contentId, nodeId, input) =>

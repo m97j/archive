@@ -18,6 +18,9 @@ import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import { parse as parseYaml } from "yaml";
 
+export * from "./ai-provider.js";
+export * from "./translation.js";
+
 export interface CompileOptions {
   locale?: Locale;
   shikiTheme?: string;

@@ -37,10 +37,11 @@ jobs:
         run: |
           mkdir -p .hf-source/apps .hf-source/packages .hf-source/infra/huggingface
           cp package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json .npmrc .dockerignore .hf-source/
-          cp -R apps/api apps/worker .hf-source/apps/
+          cp -R apps/api apps/worker apps/cms .hf-source/apps/
           cp -R packages/contracts packages/content-engine packages/db packages/observability .hf-source/packages/
           cp infra/huggingface/Dockerfile .hf-source/Dockerfile
           cp infra/huggingface/start.mjs .hf-source/infra/huggingface/start.mjs
+          cp infra/huggingface/gateway.mjs .hf-source/infra/huggingface/gateway.mjs
           cp infra/huggingface/SPACE_README.md .hf-source/README.md
 
       - name: Push build context to Hugging Face

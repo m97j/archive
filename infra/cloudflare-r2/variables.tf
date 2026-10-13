@@ -19,7 +19,7 @@ variable "allowed_origins" {
   description = "Browser origins allowed to upload using a presigned PUT URL."
   type        = list(string)
   default = [
-    "http://localhost:3000",
-    "https://marchivej.vercel.app",
+    "http://localhost:3001",
+    "https://m97j-archive-core.hf.space",
   ]
 }

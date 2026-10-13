@@ -5,6 +5,8 @@ import { SPACES } from "@archive/contracts";
 import { SiteHeader } from "@/components/site-header";
 import { requireLocale } from "@/lib/routing";
 import { portfolioUrl, siteCopy } from "@/lib/site-copy";
+import { PrivacyPreferences } from "@/components/privacy-preferences";
+import "@/components/privacy-preferences.css";
 
 export default async function LocaleLayout({
   children,
@@ -35,13 +37,11 @@ export default async function LocaleLayout({
           <Link className="wordmark" href={`/${locale}`}>
             marchivej.<span>© Minjae</span>
           </Link>
-          <nav
-            aria-label={locale === "ko" ? "외부 링크와 작성자 메뉴" : "Resources and author access"}
-          >
+          <nav aria-label={locale === "ko" ? "외부 링크" : "Resources"}>
             <a href="https://github.com/m97j">GitHub</a>
             <a href="https://huggingface.co/m97j">Hugging Face</a>
             <a href={portfolioUrl(locale)}>{copy.fallback}</a>
-            <Link href={`/${locale}/admin/login`}>{copy.admin}</Link>
+            <PrivacyPreferences locale={locale} />
           </nav>
         </div>
       </footer>

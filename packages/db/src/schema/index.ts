@@ -595,3 +595,35 @@ export const outboxEvents = pgTable(
     check("outbox_events_attempts_valid", sql`${table.attempts} >= 0 and ${table.maxAttempts} > 0`),
   ],
 ).enableRLS();
+
+// Derived vectors reference immutable, published inputs. Query/activity data never belongs here.
+export const publicationEmbeddings = pgTable(
+  "publication_embeddings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    contentId: uuid("content_id")
+      .notNull()
+      .references(() => contents.id, { onDelete: "restrict" }),
+    artifactId: uuid("artifact_id")
+      .notNull()
+      .references(() => renderArtifacts.id, { onDelete: "restrict" }),
+    locale: localeEnum("locale").notNull(),
+    sourceHash: varchar("source_hash", { length: 64 }).notNull(),
+    model: varchar("model", { length: 240 }).notNull(),
+    dimension: integer("dimension").notNull(),
+    dense: jsonb("dense").$type<number[]>().notNull(),
+    sparse: jsonb("sparse").$type<Record<string, number>>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("publication_embeddings_input_uidx").on(table.artifactId, table.model),
+    index("publication_embeddings_locale_idx").on(table.locale, table.contentId),
+    check("publication_embeddings_hash_format", sql`${table.sourceHash} ~ '^[a-f0-9]{64}$'`),
+    check("publication_embeddings_dimension_range", sql`${table.dimension} between 1 and 4096`),
+    check(
+      "publication_embeddings_dense_shape",
+      sql`jsonb_typeof(${table.dense}) = 'array' and jsonb_array_length(${table.dense}) = ${table.dimension}`,
+    ),
+    check("publication_embeddings_sparse_shape", sql`jsonb_typeof(${table.sparse}) = 'object'`),
+  ],
+).enableRLS();

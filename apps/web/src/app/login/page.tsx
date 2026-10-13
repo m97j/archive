@@ -1,7 +1,5 @@
-import { redirect } from "next/navigation";
-
-import { defaultLocale } from "@/lib/routing";
+import { notFound } from "next/navigation";
 
 export default function LoginEntryPage() {
-  redirect(`/${defaultLocale()}/admin/login`);
+  notFound();
 }

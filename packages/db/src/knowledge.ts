@@ -32,6 +32,21 @@ import { ArchiveInvariantError } from "./taxonomy.js";
 const optionalDate = (value: Date | null): string | undefined =>
   value === null ? undefined : value.toISOString();
 
+export async function listTags(db: ArchiveDatabase): Promise<{ items: Tag[] }> {
+  const rows = await db.select().from(tags).limit(500);
+  const labels = await db.select().from(tagLabels).limit(3500);
+  return {
+    items: rows.map((tag) => ({
+      id: tag.id,
+      stableKey: tag.stableKey,
+      createdAt: tag.createdAt.toISOString(),
+      labels: labels
+        .filter((label) => label.tagId === tag.id)
+        .map(({ locale, label }) => ({ locale, label })),
+    })),
+  };
+}
+
 export async function createTag(db: ArchiveDatabase, input: CreateTagInput): Promise<Tag> {
   if (new Set(input.labels.map((item) => item.locale)).size !== input.labels.length) {
     throw new ArchiveInvariantError("DUPLICATE_LOCALE", "A tag can label each locale once");

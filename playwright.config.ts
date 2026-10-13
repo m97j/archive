@@ -1,7 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-  testDir: "./apps/web/tests/e2e",
+  testDir: "./apps",
+  testMatch: ["web/tests/e2e/*.spec.ts", "cms/tests/e2e/*.spec.ts"],
   fullyParallel: false,
   workers: 1,
   timeout: 90_000,
@@ -17,12 +18,22 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
   ],
-  webServer: {
-    command:
-      "node apps/web/tests/e2e/start-ui-server.mjs" +
-      (process.env.ARCHIVE_E2E_PRODUCTION === "1" ? " --production" : ""),
-    reuseExistingServer: false,
-    timeout: 120_000,
-    url: "http://127.0.0.1:3010",
-  },
+  webServer: [
+    {
+      command:
+        "node apps/web/tests/e2e/start-ui-server.mjs" +
+        (process.env.ARCHIVE_E2E_PRODUCTION === "1" ? " --production" : ""),
+      reuseExistingServer: false,
+      timeout: 120_000,
+      url: "http://127.0.0.1:3010",
+    },
+    {
+      command:
+        "node apps/cms/tests/e2e/start-studio-server.mjs" +
+        (process.env.ARCHIVE_E2E_PRODUCTION === "1" ? " --production" : ""),
+      reuseExistingServer: false,
+      timeout: 120_000,
+      url: "http://127.0.0.1:3011",
+    },
+  ],
 });

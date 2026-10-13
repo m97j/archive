@@ -682,3 +682,78 @@ export const MediaUploadTicketSchema = Type.Object({
   headers: Type.Record(Type.String(), Type.String()),
 });
 export type MediaUploadTicket = Static<typeof MediaUploadTicketSchema>;
+
+export const QueueEmbeddingInputSchema = Type.Object(
+  { contentId: Type.String({ format: "uuid" }), locale: Type.Optional(LocaleSchema) },
+  { additionalProperties: false },
+);
+export type QueueEmbeddingInput = Static<typeof QueueEmbeddingInputSchema>;
+export const QueueTranslationInputSchema = Type.Object(
+  {
+    contentId: Type.String({ format: "uuid" }),
+    sourceLocale: LocaleSchema,
+    targetLocale: LocaleSchema,
+  },
+  { additionalProperties: false },
+);
+export type QueueTranslationInput = Static<typeof QueueTranslationInputSchema>;
+export const AdminJobSchema = Type.Object({
+  id: Type.String({ format: "uuid" }),
+  type: Type.String(),
+  status: stringEnum(["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"]),
+  attempts: Type.Integer(),
+  maxAttempts: Type.Integer(),
+  createdAt: Type.String({ format: "date-time" }),
+  updatedAt: Type.String({ format: "date-time" }),
+  result: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+  errorCode: Type.Optional(Type.String()),
+});
+export type AdminJob = Static<typeof AdminJobSchema>;
+export const AdminJobPageSchema = Type.Object({ items: Type.Array(AdminJobSchema) });
+export const HybridSearchInputSchema = Type.Object(
+  {
+    locale: LocaleSchema,
+    q: Type.String({ minLength: 1, maxLength: 200 }),
+    limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 50 })),
+  },
+  { additionalProperties: false },
+);
+export type HybridSearchInput = Static<typeof HybridSearchInputSchema>;
+export const HybridSearchResultSchema = Type.Object({
+  items: Type.Array(PublicContentSummarySchema),
+  mode: stringEnum(["hybrid", "lexical"]),
+  providerAvailable: Type.Boolean(),
+});
+export type HybridSearchResult = Static<typeof HybridSearchResultSchema>;
+
+/** Reserved endpoints are never valid content publication paths, including encoded aliases. */
+export function isReservedPublicationPath(path: string): boolean {
+  let decoded: string;
+  try {
+    decoded = path;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const next = decodeURIComponent(decoded);
+      if (next === decoded) break;
+      decoded = next;
+    }
+    if (/%[0-9a-f]{2}/i.test(decoded)) return true;
+    decoded = decoded.normalize("NFKC").toLowerCase();
+  } catch {
+    return true;
+  }
+  const segments = decoded.split("/").filter(Boolean);
+  const first = segments[0];
+  const route = LOCALES.includes(first as Locale) ? segments[1] : first;
+  return (
+    ["admin", "login", "signin", "sign-in", "new", "cms", "auth", "api", "_next"].includes(
+      route ?? "",
+    ) ||
+    decoded.includes("\\") ||
+    /[?#]/.test(decoded) ||
+    [...decoded].some((char) => {
+      const code = char.codePointAt(0) ?? 0;
+      return code < 32 || code === 127;
+    }) ||
+    segments.some((segment) => segment === "." || segment === "..")
+  );
+}

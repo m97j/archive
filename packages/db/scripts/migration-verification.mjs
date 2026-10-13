@@ -12,6 +12,17 @@ export function legacyInventory(inventory) {
     .sort((left, right) => left.name.localeCompare(right.name, "en"));
 }
 
+/** Additive releases must retain the exact rows of every pre-existing public table. */
+export function existingApplicationRowsPreserved(before, after) {
+  const expected = before.filter((table) => table.schema === "public");
+  return expected.every((table) => {
+    const current = after.find(
+      (candidate) => candidate.schema === table.schema && candidate.name === table.name,
+    );
+    return current?.rows === table.rows && current?.sha256 === table.sha256;
+  });
+}
+
 export function fixedFunctionSearchPaths(rows) {
   return (
     rows.length === guardedFunctions.size &&
