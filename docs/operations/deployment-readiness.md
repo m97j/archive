@@ -1,5 +1,9 @@
 # Deployment readiness
 
+The current CMS/inference release is documented in [private CMS operations](private-cms.md).
+Its 2026-10-13 checks supersede earlier statements below about Vercel-hosted authoring or missing
+standalone inference endpoints. The dated first-release evidence is retained for provenance.
+
 > **2026-10-11 measured decision:** Keep Vercel + private HF archive-core + Supabase,
 > using **Drizzle + pg + Session pooler**. Connectivity was verified inside the HF runtime
 > rather than inferred from the published networking policy. Production schema and

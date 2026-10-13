@@ -98,6 +98,30 @@ try {
     if (!fixedFunctionSearchPathsVerified)
       throw new Error("FIXED_FUNCTION_SEARCH_PATH_CHECK_FAILED");
   }
+  const embeddingMigration = files.find((file) =>
+    file.sql.some((statement) => statement.includes('CREATE TABLE "publication_embeddings"')),
+  );
+  let embeddingAccessVerified;
+  if (
+    embeddingMigration &&
+    (apply || applied.some((row) => row.hash === embeddingMigration.hash))
+  ) {
+    const rows = (
+      await pool.query(`SELECT c.relrowsecurity AS rls,
+      CASE WHEN EXISTS(SELECT FROM pg_catalog.pg_roles WHERE rolname='anon')
+        THEN has_table_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') ELSE false END AS anon_access,
+      CASE WHEN EXISTS(SELECT FROM pg_catalog.pg_roles WHERE rolname='authenticated')
+        THEN has_table_privilege('authenticated', c.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') ELSE false END AS authenticated_access
+      FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+      WHERE n.nspname='public' AND c.relname='publication_embeddings'`)
+    ).rows;
+    embeddingAccessVerified =
+      rows.length === 1 &&
+      rows[0].rls === true &&
+      rows[0].anon_access === false &&
+      rows[0].authenticated_access === false;
+    if (!embeddingAccessVerified) throw new Error("EMBEDDING_ACCESS_POLICY_CHECK_FAILED");
+  }
   console.log(
     JSON.stringify({
       mode: apply ? "apply" : "plan",
@@ -108,6 +132,7 @@ try {
       historyVerified: true,
       applied: apply ? pending.length : 0,
       ...(legacyDataPreserved === undefined ? {} : { legacyDataPreserved }),
+      ...(embeddingAccessVerified === undefined ? {} : { embeddingAccessVerified }),
       ...(existingApplicationDataPreserved === undefined
         ? {}
         : { existingApplicationDataPreserved }),

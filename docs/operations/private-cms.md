@@ -1,5 +1,21 @@
 # Private CMS and inference rollout
 
+## Verified release — 2026-10-13
+
+- Production CMS/API/worker and reader builds deployed; Vercel management routes return 404.
+- The owner confirmed password login and CMS entry in the actual private HF App iframe.
+- An independently seeded, valid real-user session confirmed deployed CMS access and mobile
+  layout. This check did not exercise a refresh token or months-long persistence.
+- Actual owner API creation, two revisions, review, publication, archive and restore passed.
+  The scoped cache update was observed after 0.81 seconds; this is not a latency SLA.
+- Additive migration `0008` followed a fresh encrypted backup, isolated restore and durable
+  private dataset preservation. All pre-existing application rows and legacy rows matched.
+- Real CPU inference, queued publication embedding, hybrid search, and translation-to-draft
+  passed. Original source, code, math and image URLs remained intact; hidden vectors were
+  excluded from public search. No model-quality benchmark or SOTA claim is implied.
+- Test documents remain private and archived, not deleted. Paid APIs and activity collection
+  remain disabled. Visual layout releases and personalization remain future features.
+
 ## Configuration
 
 Set these only on `m97j/archive-core`, never as browser-visible variables:
@@ -33,7 +49,7 @@ can remain unused; removing or rotating them requires reviewing other consumers 
 
 1. Frozen dependency install, lint/types, unit/security tests and production builds.
 2. Desktop/mobile CMS and reader tests with synthetic fixtures; do not label these real-account tests.
-3. Public source audit, main-only commit/push. Private local evidence and agent history stay local.
+3. Public source audit, main-only commit/push. Private local evidence and development history stay local.
 4. DB workflow plan, fresh encrypted backup, isolated restore/fingerprint verification, then additive
    `0008_publication_embeddings` migration. Keep original content and tables.
 5. Private HF core synchronization, Vercel Git deployment and allowlisted knowledge-engine source
