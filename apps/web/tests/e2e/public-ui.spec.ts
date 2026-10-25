@@ -140,7 +140,9 @@ test("collections expose active navigation and public authoring paths are absent
   const response = await page.goto("/ko/admin/new");
   expect(response?.status()).toBe(404);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("이 글을 확인할 수 없습니다.");
-  await expect(page.locator('input[type="password"]')).toHaveCount(0);
+  await expect(page.locator('input[type="password"]:not([data-deletion-capability])')).toHaveCount(
+    0,
+  );
 });
 
 test("all reserved management entry points return 404 without authoring endpoints", async ({

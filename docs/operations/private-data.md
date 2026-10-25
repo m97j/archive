@@ -34,10 +34,16 @@ Creating the dataset does **not** enable visitor tracking. No new activity colle
 training is started by this release. Future exports should be produced by the private worker,
 not browsers, with a repository-scoped `HF_DATASET_TOKEN` in HF Secrets.
 
-Behavioral logs and permanently retained query embeddings belong in the private dataset, not
-Supabase application tables. Corpus embeddings may use PostgreSQL/pgvector for serving when
-capacity permits, with versioned research snapshots in the dataset. A serving index/cache and a
-training dataset have different lifetimes and must not be confused.
+Optional visitor raw activity now belongs in a **separate private HF Bucket**, with independent
+short-session and time-bounded model-improvement choices. It must not be committed to this
+backup Dataset's history. See [session activity](session-activity.md) for the disabled-by-default
+capture, deletion capabilities, real scheduled expiry and activation gates. No existing Dataset
+snapshot is migrated or deleted by that change.
+
+Only reviewed, purpose-compatible research exports should become versioned Dataset snapshots.
+Query text/embeddings are not captured by the activity feature. Corpus embeddings may use
+PostgreSQL/pgvector for serving when capacity permits, with approved research snapshots in a
+separate Dataset. A serving index/cache and a training dataset have different lifetimes.
 
 Before collection is enabled, define the purpose, opt-in/opt-out behavior, pseudonymous IDs,
 retention period, deletion process and access scope. Do not retain raw IPs, email addresses,

@@ -745,9 +745,18 @@ export function isReservedPublicationPath(path: string): boolean {
   const first = segments[0];
   const route = LOCALES.includes(first as Locale) ? segments[1] : first;
   return (
-    ["admin", "login", "signin", "sign-in", "new", "cms", "auth", "api", "_next"].includes(
-      route ?? "",
-    ) ||
+    [
+      "admin",
+      "login",
+      "signin",
+      "sign-in",
+      "new",
+      "cms",
+      "auth",
+      "api",
+      "_next",
+      "privacy",
+    ].includes(route ?? "") ||
     decoded.includes("\\") ||
     /[?#]/.test(decoded) ||
     [...decoded].some((char) => {

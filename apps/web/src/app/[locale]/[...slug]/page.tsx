@@ -1,15 +1,28 @@
 import type { Metadata } from "next";
-import { isReservedPublicationPath } from "@archive/contracts";
+import { isReservedPublicationPath, type Locale, type PublicDocument } from "@archive/contracts";
 import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import { DocumentEnhancer } from "@/components/document-enhancer";
+import { DocumentRecommendations } from "@/components/document-recommendations";
 import { DocumentToc } from "@/components/document-toc";
 import { resolvePublicDocument } from "@/lib/archive-api.server";
+import { getDocumentRecommendations } from "@/lib/document-recommendations.server";
 import { requireLocale } from "@/lib/routing";
 import { contentKindLabel, siteCopy } from "@/lib/site-copy";
 
 type PageParams = Promise<{ locale: string; slug: string[] }>;
+
+async function Recommendations({ document, locale }: { document: PublicDocument; locale: Locale }) {
+  return (
+    <DocumentRecommendations
+      key={`${document.contentId}:${document.artifact.sourceHash}`}
+      locale={locale}
+      recommendations={await getDocumentRecommendations(document)}
+    />
+  );
+}
 
 async function load(params: PageParams) {
   const values = await params;
@@ -62,9 +75,14 @@ export default async function DocumentPage({ params }: { params: PageParams }) {
         <div
           className="prose"
           data-compiled-document
+          data-public-content-id={result.contentId}
+          data-public-revision={result.revisionNumber}
           dangerouslySetInnerHTML={{ __html: result.artifact.html }}
         />
       </div>
+      <Suspense fallback={null}>
+        <Recommendations document={result} locale={locale} />
+      </Suspense>
       <nav
         className="document-bottom"
         aria-label={locale === "ko" ? "읽기 탐색" : "Reading navigation"}

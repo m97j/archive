@@ -1,65 +1,89 @@
-import { createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
+  ACTIVITY_SESSION_COOKIE,
   PRIVACY_COOKIE,
   PRIVACY_UUID,
+  activityCookieOptions,
+  activityRequestBudget,
+  activitySubjectKey,
   boundedRequestText,
+  decodeActivitySession,
   decodePrivacyChoice,
+  encodeActivitySession,
   privacySettings,
   safeActivityEvents,
+  sameOriginRequest,
 } from "@/lib/privacy.server";
+import {
+  hfActivityStore,
+  normalizePublicActivity,
+  preserveActivityBatch,
+} from "@/lib/hf-activity-storage.server";
 
+export const runtime = "nodejs";
+const headers = { "Cache-Control": "private, no-store" };
 export async function POST(request: Request) {
-  const settings = privacySettings();
-  if (!settings.enabled || !settings.secret) return new NextResponse(null, { status: 404 });
-  if (request.headers.get("origin") !== new URL(request.url).origin)
-    return new NextResponse(null, { status: 403 });
-  const choice = decodePrivacyChoice((await cookies()).get(PRIVACY_COOKIE)?.value);
-  if (!choice?.analytics || !choice.subjectId) return new NextResponse(null, { status: 403 });
+  if (!privacySettings().enabled) return new NextResponse(null, { status: 404, headers });
+  if (!sameOriginRequest(request)) return new NextResponse(null, { status: 403, headers });
+  const jar = await cookies();
+  const choice = decodePrivacyChoice(jar.get(PRIVACY_COOKIE)?.value);
+  const session = decodeActivitySession(jar.get(ACTIVITY_SESSION_COOKIE)?.value);
+  if (
+    !choice ||
+    !session ||
+    !(choice.sessionPersonalization || choice.modelImprovement) ||
+    session.sessionPersonalization !== choice.sessionPersonalization ||
+    session.modelImprovement !== choice.modelImprovement
+  )
+    return new NextResponse(null, { status: 403, headers });
+  if (!activityRequestBudget(activitySubjectKey(session.deleteCode), 24))
+    return new NextResponse(null, { status: 429, headers });
+  let body: Record<string, unknown>;
   try {
-    const supplied = JSON.parse(await boundedRequestText(request, 32768)) as Record<
-      string,
-      unknown
-    >;
-    const events = safeActivityEvents(supplied.events);
+    body = JSON.parse(await boundedRequestText(request, 16384)) as Record<string, unknown>;
     if (
-      !PRIVACY_UUID.test(String(supplied.batchId)) ||
-      !PRIVACY_UUID.test(String(supplied.sessionId)) ||
-      !events
+      !body ||
+      Array.isArray(body) ||
+      Object.keys(body).length !== 2 ||
+      !PRIVACY_UUID.test(String(body.batchId))
     )
-      return new NextResponse(null, { status: 400 });
-    const body = JSON.stringify({
-      schemaVersion: 1,
-      policyVersion: choice.version,
-      subjectId: choice.subjectId,
-      sessionId: supplied.sessionId,
-      batchId: supplied.batchId,
-      consentedAt: choice.decidedAt,
-      events,
-    });
-    const base = process.env.ARCHIVE_API_BASE_URL;
-    const gateway = process.env.ARCHIVE_API_UPSTREAM_BEARER_TOKEN;
-    if (!base || !gateway) return new NextResponse(null, { status: 503 });
-    const result = await fetch(`${base.replace(/\/$/, "")}/v1/telemetry/batches`, {
-      method: "POST",
-      cache: "no-store",
-      signal: AbortSignal.timeout(40_000),
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${gateway}`,
-        "x-archive-activity-signature": createHmac("sha256", settings.secret)
-          .update("archive:telemetry:v1\0")
-          .update(body)
-          .digest("hex"),
-      },
-      body,
-    });
-    return new NextResponse(null, {
-      status: result.ok ? 201 : 503,
-      headers: { "Cache-Control": "private, no-store" },
-    });
+      throw new Error("INVALID_BATCH");
   } catch {
-    return new NextResponse(null, { status: 400 });
+    return new NextResponse(null, { status: 400, headers });
+  }
+  const events = safeActivityEvents(body.events);
+  if (!events) return new NextResponse(null, { status: 400, headers });
+  try {
+    const normalized = await normalizePublicActivity(events);
+    if (!normalized.length) return new NextResponse(null, { status: 204, headers });
+    const result = await preserveActivityBatch(
+      hfActivityStore(),
+      session,
+      String(body.batchId),
+      normalized,
+    );
+    const refreshed = { ...session, lastActiveAt: Date.now() };
+    const response = NextResponse.json(
+      { preserved: true, duplicate: result.duplicate },
+      { status: 201, headers },
+    );
+    response.cookies.set(
+      ACTIVITY_SESSION_COOKIE,
+      encodeActivitySession(refreshed),
+      activityCookieOptions(refreshed),
+    );
+    return response;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "";
+    const status =
+      reason === "ACTIVITY_RATE_LIMIT"
+        ? 429
+        : reason === "ACTIVITY_REVOKED"
+          ? 403
+          : reason.startsWith("ACTIVITY_PUBLIC") || reason === "ACTIVITY_SECTION_REQUIRED"
+            ? 400
+            : 503;
+    return new NextResponse(null, { status, headers });
   }
 }

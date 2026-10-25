@@ -9,6 +9,7 @@ import {
   CreateTaxonomyNodeInputSchema,
   EPISTEMIC_STATUSES,
   LOCALES,
+  isReservedPublicationPath,
   PublishRevisionInputSchema,
   PublicContentQuerySchema,
   PublicNavigationQuerySchema,
@@ -16,6 +17,11 @@ import {
 } from "./index.js";
 
 describe("archive contracts", () => {
+  it("reserves the privacy notice route, including encoded aliases", () => {
+    for (const route of ["/ko/privacy", "/en/privacy", "/ko/%70rivacy", "/ko/privacy/other"])
+      expect(isReservedPublicationPath(route)).toBe(true);
+    expect(isReservedPublicationPath("/ko/docs/privacy-design")).toBe(false);
+  });
   it("keeps the supported locale and epistemic vocabularies stable", () => {
     expect(LOCALES).toEqual(["en", "ko", "ja", "zh", "es", "fr", "de"]);
     expect(EPISTEMIC_STATUSES).toContain("REGULATIVE_IDEA");

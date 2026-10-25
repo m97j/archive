@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { createHmac, randomBytes } from "node:crypto";
 import { fileURLToPath, URL } from "node:url";
 import { compileDocument } from "../../../../packages/content-engine/dist/index.js";
+import { detailDocuments } from "../fixtures/detail-documents.mjs";
 
 // A loopback-only fixture, never a production API or an authenticated test shortcut.
 const fixturePort = 17761;
@@ -11,6 +12,11 @@ const production = process.argv.includes("--production");
 const fixtureWebhookSecret = randomBytes(32).toString("base64url");
 let mode = process.argv.includes("--empty") ? "empty" : "normal";
 const artifacts = new Map();
+const examples = await detailDocuments(compileDocument);
+const publicSummary = (record) =>
+  Object.fromEntries(
+    Object.entries(record).filter(([key]) => key !== "artifact" && key !== "revisionNumber"),
+  );
 for (const locale of ["ko", "en"]) {
   const source = `# ${locale === "ko" ? "읽기 환경 테스트" : "Reading environment test"}\n\n## ${locale === "ko" ? "방법" : "Method"}\n\nA deterministic local UI fixture.\n\n### Details\n\n${"Long paragraph for reading and anchor navigation. ".repeat(25)}\n\n## Results\n\n| ${Array.from({ length: 12 }, (_, i) => `Long column ${i}`).join(" | ")} |\n| ${Array.from({ length: 12 }, () => "---").join(" | ")} |\n| ${Array.from({ length: 12 }, () => "long-unbroken-test-value").join(" | ")} |\n\n$$\\sum_{i=0}^{n} x_i^2$$\n\n\`\`\`ts\nconst example = '${"value".repeat(25)}';\n\`\`\`\n\n\`\`\`mermaid\nflowchart LR\n  A[Question] --> B[Evidence]\n\`\`\`\n`;
   artifacts.set(
@@ -79,11 +85,14 @@ const fixture = createServer(async (request, response) => {
     title,
     description: "Local UI fixture, not a published record.",
     publishedAt: "2026-10-01T00:00:00.000Z",
-    tags: ["NLP"],
+    tags: ["LayoutFixture"],
   };
   if (publicSearch)
     return json(response, 200, {
-      items: mode === "empty" || url.searchParams.get("q") === "none" ? [] : [item],
+      items:
+        mode === "empty" || url.searchParams.get("q") === "none"
+          ? []
+          : [item, ...examples.filter((record) => record.locale === locale).map(publicSummary)],
       mode: "lexical",
       providerAvailable: false,
     });
@@ -94,7 +103,10 @@ const fixture = createServer(async (request, response) => {
       mode === "empty" || url.searchParams.get("q") === "none"
         ? { items: [] }
         : {
-            items: [item],
+            items: [
+              item,
+              ...examples.filter((record) => record.locale === locale).map(publicSummary),
+            ],
             ...(!url.searchParams.has("cursor") ? { nextCursor: "fixture-next" } : {}),
           },
     );
@@ -111,6 +123,12 @@ const fixture = createServer(async (request, response) => {
         },
       ],
     });
+  if (url.pathname === "/v1/public/resolve") {
+    const example = examples.find(
+      (record) => record.path === url.searchParams.get("path") && record.locale === locale,
+    );
+    if (example) return json(response, 200, { type: "document", ...example });
+  }
   if (url.pathname === "/v1/public/resolve" && url.searchParams.get("path") === item.path)
     return json(response, 200, {
       type: "document",
@@ -149,6 +167,10 @@ const child = spawn(
       OUTBOX_WEBHOOK_SECRET: fixtureWebhookSecret,
       NEXT_PUBLIC_SUPABASE_URL: "",
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "",
+      ACTIVITY_COLLECTION_ENABLED: "false",
+      ACTIVITY_POLICY_REVIEWED: "false",
+      ACTIVITY_RETENTION_SCHEDULER_REVIEWED: "false",
+      ARCHIVE_LOCAL_PREVIEW: production ? "0" : "1",
       NODE_ENV: production ? "production" : "development",
     },
   },

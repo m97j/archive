@@ -23,7 +23,7 @@ export default defineConfig({
       command:
         "node apps/web/tests/e2e/start-ui-server.mjs" +
         (process.env.ARCHIVE_E2E_PRODUCTION === "1" ? " --production" : ""),
-      reuseExistingServer: false,
+      reuseExistingServer: process.env.ARCHIVE_E2E_REUSE_LOCAL === "1",
       timeout: 120_000,
       url: "http://127.0.0.1:3010",
     },

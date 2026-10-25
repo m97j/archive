@@ -5,6 +5,7 @@ node_modules/
 
 # Build and test output
 .next/
+/apps/web/.next-preview/
 out/
 dist/
 .turbo/
@@ -64,6 +65,7 @@ _local/
 # Tool-generated guidance is local, not application source.
 **/AGENTS.md
 **/CLAUDE.md
+/README_WORKSPACE.md
 
 # Private operational receipts are not part of the published source tree.
 /docs/operations/evidence/

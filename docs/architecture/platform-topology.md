@@ -65,13 +65,17 @@ Dense/sparse model revision and precision IDs must match. The initial exact rank
 to 500 published candidates, with lexical fallback on cold start, failure or incompatible vectors.
 This is a small-archive implementation, not an ANN index, multi-vector or multimodal model.
 
-Optional activity collection requires both `ANALYTICS_ENABLED=true` and
-`ANALYTICS_POLICY_REVIEWED=true`; both remain off for this release. The foundation has explicit
-opt-in/withdrawal, signed consent, path-only events and a private dataset sink, not raw form text,
-search queries, IP addresses or email. Random identifiers are pseudonymous, not automatically
-anonymous. Define lawful basis, controller/contact, purpose, retention, cross-border transfers
-and operational deletion before activation. Removing a Git file alone does not erase HF history.
-This foundation is not a regulated EMR audit system or a legal compliance certification.
+Optional activity v2 remains disabled. Independent session-processing and model-improvement
+choices use a 30-minute-idle/12-hour-cap session, not a persistent visitor identifier. Vercel
+resolves published content IDs, encrypts minimal events and writes directly to a new private HF
+Bucket under separate purpose prefixes. No raw paths, queries, form text, IP or email are stored.
+Defaults are two-hour session raw expiry and 90-day model-improvement raw expiry, followed by
+the real scheduled purge; capability-based deletion and tombstones handle withdrawal/replay.
+A stale cleanup heartbeat stops new capture. The former Space-to-Dataset v1 writer is retired.
+See [setup and activation gates](../operations/session-activity.md): actual private Bucket,
+contracts/transfers/notice, edge limits, deletion tests and hourly cleanup must be reviewed before
+all three `ACTIVITY_*` flags are enabled. Pseudonymous events are not automatically anonymous;
+this implementation is neither a regulated EMR audit system nor a legal compliance certification.
 
 The visual site-layout release editor, behavioral personalization and custom research models
 remain future extensions. Changing site structure/styles still requires a reviewed source release.

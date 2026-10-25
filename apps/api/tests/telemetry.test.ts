@@ -18,6 +18,19 @@ const batch: ActivityBatch = {
 };
 afterEach(() => vi.unstubAllEnvs());
 describe("private durable activity collection", () => {
+  it("does not reactivate the retired production Dataset sink through legacy flags", async () => {
+    vi.stubEnv("ANALYTICS_ENABLED", "true");
+    vi.stubEnv("ANALYTICS_POLICY_REVIEWED", "true");
+    const app = Fastify();
+    const preserve = vi.fn();
+    registerTelemetryRoutes(app, { secret, sink: { preserve } });
+    expect(
+      (await app.inject({ method: "POST", url: "/v1/telemetry/batches", payload: batch }))
+        .statusCode,
+    ).toBe(404);
+    expect(preserve).not.toHaveBeenCalled();
+    await app.close();
+  });
   it("stays unavailable when policy review is absent", async () => {
     vi.stubEnv("ANALYTICS_ENABLED", "true");
     vi.stubEnv("ANALYTICS_POLICY_REVIEWED", "false");

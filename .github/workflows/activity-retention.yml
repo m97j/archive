@@ -1,0 +1,131 @@
+name: Enforce private activity retention
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Remove expired activity and refresh cleanup heartbeat (off = read-only readiness)
+        type: boolean
+        required: false
+        default: false
+      verify_storage:
+        description: Write and erase synthetic records with collection disabled (not read-only)
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: archive-activity-retention
+  cancel-in-progress: false
+
+jobs:
+  retain:
+    if: github.repository == 'm97j/archive' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: Production
+    env:
+      ARCHIVE_ACTIVITY_SITE_URL: ${{ vars.ARCHIVE_PUBLIC_SITE_URL || 'https://marchivej.vercel.app' }}
+      ACTIVITY_MAINTENANCE_APPLY: ${{ github.event_name == 'schedule' || inputs.apply == true }}
+      ACTIVITY_VERIFY_STORAGE: ${{ github.event_name == 'workflow_dispatch' && inputs.verify_storage == true }}
+    steps:
+      - name: Check maintenance configuration without sending a request
+        id: configuration
+        env:
+          ARCHIVE_ACTIVITY_MAINTENANCE_SECRET: ${{ secrets.ARCHIVE_ACTIVITY_MAINTENANCE_SECRET }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          from urllib.parse import urlsplit
+
+          def output(value):
+              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+                  handle.write("ready=" + value + "\n")
+
+          def summary(message):
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+                  handle.write(message + "\n")
+
+          secret = os.environ.get("ARCHIVE_ACTIVITY_MAINTENANCE_SECRET", "")
+          if not secret:
+              output("false")
+              summary("Activity retention was skipped: the maintenance secret is not configured. No request was sent and no cleanup is claimed.")
+              raise SystemExit(0)
+
+          site = os.environ.get("ARCHIVE_ACTIVITY_SITE_URL", "")
+          try:
+              parsed = urlsplit(site)
+              valid_site = (
+                  site in {"https://marchivej.vercel.app", "https://marchivej.vercel.app/"}
+                  and parsed.scheme == "https"
+                  and parsed.netloc == "marchivej.vercel.app"
+                  and parsed.path in {"", "/"}
+                  and not parsed.query
+                  and not parsed.fragment
+                  and parsed.username is None
+                  and parsed.password is None
+              )
+          except ValueError:
+              valid_site = False
+
+          if not valid_site or not re.fullmatch(r"[a-fA-F0-9]{64}", secret):
+              output("false")
+              summary("Activity retention configuration was rejected. Check the approved HTTPS origin and maintenance secret format. No request was sent.")
+              raise SystemExit("Maintenance configuration rejected; values are not printed.")
+
+          output("true")
+          PY
+
+      - name: Check out maintenance source
+        if: steps.configuration.outputs.ready == 'true'
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        if: steps.configuration.outputs.ready == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+
+      - name: Verify private access or explicitly run retention
+        if: steps.configuration.outputs.ready == 'true'
+        env:
+          ARCHIVE_ACTIVITY_MAINTENANCE_SECRET: ${{ secrets.ARCHIVE_ACTIVITY_MAINTENANCE_SECRET }}
+        run: |
+          if [ "$ACTIVITY_MAINTENANCE_APPLY" = "true" ] && [ "$ACTIVITY_VERIFY_STORAGE" = "true" ]; then
+            echo "Choose one maintenance mode."
+            exit 1
+          fi
+          if [ "$ACTIVITY_VERIFY_STORAGE" = "true" ]; then
+            node apps/web/scripts/activity-maintenance.mjs --verify-storage
+          elif [ "$ACTIVITY_MAINTENANCE_APPLY" = "true" ]; then
+            node apps/web/scripts/activity-maintenance.mjs --apply
+          else
+            node apps/web/scripts/activity-maintenance.mjs
+          fi
+
+      - name: Record maintenance outcome
+        if: always() && steps.configuration.outputs.ready == 'true'
+        env:
+          MAINTENANCE_STATUS: ${{ job.status }}
+        run: |
+          python - <<'PY'
+          import os
+          if os.environ.get("MAINTENANCE_STATUS") != "success":
+              message = "Activity maintenance did not complete successfully. Readiness and full cleanup are not claimed."
+          elif os.environ.get("ACTIVITY_VERIFY_STORAGE") == "true":
+              message = "Synthetic conditional writes, listing, expiry simulation and deletion passed. Test objects were erased. Collection remains disabled; the real cleanup heartbeat was not refreshed."
+          elif os.environ.get("ACTIVITY_MAINTENANCE_APPLY") == "true":
+              message = "The maintenance runner completed and verified every retention page. This workflow does not enable activity collection."
+          else:
+              message = "Read-only private Bucket readiness passed. No objects were changed and the cleanup heartbeat was not refreshed. This workflow does not enable activity collection."
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as handle:
+              handle.write(message + "\n")
+          PY

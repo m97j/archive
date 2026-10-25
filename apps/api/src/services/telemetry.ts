@@ -63,12 +63,12 @@ export function registerTelemetryRoutes(
     sink?: PrivateActivitySink;
   } = {},
 ): void {
-  const enabled =
-    options.enabled ??
-    (process.env.ANALYTICS_ENABLED === "true" && process.env.ANALYTICS_POLICY_REVIEWED === "true");
-  const secret = options.secret ?? process.env.OUTBOX_WEBHOOK_SECRET;
+  // Retired production v1: raw activity must not be committed to Dataset Git history.
+  // An explicitly injected local test sink remains available for compatibility tests.
+  const enabled = options.enabled ?? false;
+  const secret = options.secret;
   const policy = options.policy ?? process.env.ANALYTICS_POLICY_VERSION ?? "2026-10-13";
-  const sink = options.sink ?? privateDatasetSink();
+  const sink = options.sink;
   app.post<{ Body: ActivityBatch }>(
     "/v1/telemetry/batches",
     {
@@ -120,53 +120,4 @@ export function registerTelemetryRoutes(
       }
     },
   );
-}
-
-function privateDatasetSink(): PrivateActivitySink | undefined {
-  const token = process.env.HF_DATASET_TOKEN;
-  const repository = process.env.HF_PRIVATE_DATASET_REPOSITORY;
-  if (!token || !repository || !/^[\w-]+\/[\w-]+$/.test(repository)) return undefined;
-  return {
-    async preserve(batch) {
-      const endpoint = `https://huggingface.co/api/datasets/${repository}`;
-      const metadataResponse = await fetch(`${endpoint}?expand=private`, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!metadataResponse.ok) throw new Error("PRIVATE_STORAGE_UNAVAILABLE");
-      const metadata = (await metadataResponse.json()) as { private?: boolean };
-      if (metadata.private !== true) throw new Error("PRIVATE_DATASET_REQUIRED");
-      const date = new Date().toISOString().slice(0, 10);
-      const path = `activity/v1/${batch.policyVersion}/${batch.subjectId}/${date}/${batch.batchId}.jsonl`;
-      const data =
-        batch.events
-          .map((event) =>
-            JSON.stringify({
-              schemaVersion: 1,
-              policyVersion: batch.policyVersion,
-              subjectId: batch.subjectId,
-              sessionId: batch.sessionId,
-              consentedAt: batch.consentedAt,
-              receivedDate: date,
-              ...event,
-            }),
-          )
-          .join("\n") + "\n";
-      const response = await fetch(`${endpoint}/commit/main`, {
-        method: "POST",
-        signal: AbortSignal.timeout(20_000),
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/x-ndjson" },
-        body: [
-          { key: "header", value: { summary: "Preserve consented activity batch" } },
-          {
-            key: "file",
-            value: { path, encoding: "base64", content: Buffer.from(data).toString("base64") },
-          },
-        ]
-          .map((item) => JSON.stringify(item))
-          .join("\n"),
-      });
-      if (!response.ok) throw new Error("PRIVATE_STORAGE_UNAVAILABLE");
-    },
-  };
 }
