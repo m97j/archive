@@ -28,6 +28,7 @@ export default async function PrivacyNotice({ params }: { params: Promise<{ loca
           <span>
             {ko ? "안내 버전" : "Notice version"}: {policy.version}
           </span>
+          <span>{ko ? "처리 현황 확인: 2026-10-25" : "Processing review: 2026-10-25"}</span>
           <span>
             {policy.enabled
               ? ko
@@ -76,11 +77,59 @@ export default async function PrivacyNotice({ params }: { params: Promise<{ loca
             ? "IP, 이메일, 직업, 로그인 계정, 검색어 원문, 입력 내용, 전체 URL·query string, 화면 녹화, 브라우저 지문은 이 활동 파이프라인에 저장하지 않습니다. 세션 식별자가 있다고 완전히 익명인 것은 아닙니다. 이동 기록에서 관심이 추정될 수 있습니다."
             : "This activity pipeline does not store IPs, email, occupation, account identifiers, query text, typed text, full URLs, query strings, screen recordings or browser fingerprints. Session identifiers do not guarantee anonymity; interests may be inferred from navigation."}
         </p>
-        <h2>{ko ? "저장 장소·국외 처리" : "Storage and overseas processing"}</h2>
+        <h2>{ko ? "처리 업체와 저장 장소" : "Providers and storage locations"}</h2>
         <p>
           {ko
-            ? "Vercel의 사이트 서버가 검증한 최소 자료를 Hugging Face의 별도 비공개 Bucket에 암호화하여 저장합니다. 일반 PRO 저장소는 공식 지역 안내상 미국에 저장됩니다. 이 저장 경로의 적용 계약, 구체적 처리·이전 조건과 필요한 고지는 실제 활성화 전에 운영자가 확인해야 합니다. 이 페이지나 private 설정만으로 계약·법률 검토가 완료된 것은 아닙니다."
-            : "The Vercel site server validates minimum records and encrypts them in a separate private Hugging Face Bucket. Standard PRO storage is US-based according to HF's region documentation. Applicable contracts, actual overseas processing and transfer notices must be confirmed before activation. This notice or private visibility is not legal clearance."}
+            ? "선택적 활동 수집은 현재 비활성화되어 있습니다. 활성화할 경우 브라우저에서 사이트 서버로 전송한 최소 활동 자료를 검증한 뒤, 별도 비공개 저장소에 암호화하여 보관하는 구조입니다. 이 원로그를 Supabase DB나 공개 Dataset에 저장하지 않습니다."
+            : "Optional activity collection is currently disabled. The intended flow validates minimum records sent from the browser to the site server, then encrypts them in separate private storage. Raw activity is not stored in the Supabase database or a public Dataset."}
+        </p>
+        <ul>
+          <li>
+            <strong>Vercel Inc.</strong> —{" "}
+            {ko
+              ? "사이트 서버와 요청 처리. 확인일 기준 운영 함수는 미국 워싱턴 D.C. 권역(iad1)에서 실행됩니다. 전 세계 CDN·보안 로그·재위탁 처리가 모두 이 지역에 한정된다는 의미는 아닙니다."
+              : "Site hosting and request processing. At the review date, production functions run in the Washington, D.C., USA region (iad1). This does not restrict global CDN, security logs or subprocessors to that region."}{" "}
+            <a href="mailto:privacy@vercel.com">privacy@vercel.com</a>
+          </li>
+          <li>
+            <strong>Hugging Face, Inc.</strong> —{" "}
+            {ko
+              ? "별도 비공개 Bucket의 저장·삭제 처리. 일반 PRO 저장소는 공식 지역 안내상 미국에 저장됩니다. 해당 Bucket의 실제 재위탁 업체·접근 국가와 백업 삭제 조건은 확인 중입니다."
+              : "Storage and deletion in a separate private Bucket. Standard PRO storage is US-based according to the region documentation. Bucket-specific subprocessors, access countries and backup erasure conditions remain unconfirmed."}{" "}
+            <a href="mailto:privacy@huggingface.co">privacy@huggingface.co</a>
+          </li>
+        </ul>
+        <p>
+          {ko
+            ? "현재 구조에는 브라우저에서 AWS 저장소로 직접 보내는 경로가 없습니다. HF의 S3 호환 인터페이스는 HF가 제공하는 서비스이며, AWS SDK 사용이 AWS와의 직접 저장 계약을 의미하지는 않습니다. HF는 일반 개인정보 정책에서 AWS 등 재위탁 업체를 공개하지만, 그 목록만으로 이 Bucket의 실제 처리 업체와 모든 국가를 확정할 수는 없습니다."
+            : "The current flow does not send activity directly from the browser to AWS storage. HF provides its S3-compatible service; use of an AWS SDK does not create a direct AWS storage agreement. HF lists providers including AWS in its general privacy policy, but that list alone does not establish this Bucket's actual processing chain and all countries."}
+        </p>
+        <h2>{ko ? "국외 처리와 활성화 조건" : "Overseas processing and activation conditions"}</h2>
+        <p>
+          {ko
+            ? "활성화할 경우 위의 최소 활동 항목이 동의한 목적의 이벤트 전송 시 HTTPS로 국외 처리됩니다. 현재 PRO 계정에 적용되는 HF 처리 계약과 Vercel Hobby 요금제의 계약 적용 범위를 확인 중입니다. 제공자 정책의 일반적인 보유 조항을 이 사이트의 2시간·90일 삭제 보장으로 대신하지 않습니다."
+            : "If activated, the minimum activity fields above would be processed overseas over HTTPS when events are sent for an accepted purpose. HF processing terms for this PRO account and the contract scope for Vercel Hobby are under review. General provider retention clauses do not establish this site's two-hour or 90-day erasure guarantees."}
+        </p>
+        <p>
+          {ko
+            ? "처리·이전 근거, 수신 업체·연락처, 실제 국가, 이전 시기·방법, 목적별 보관 기간과 거부 방법을 확정하여 안내하기 전에는 선택적 수집을 시작하지 않습니다. 국외 이전의 근거로 별도 동의를 사용하는 경우에는 두 목적의 선택과 구분하여 해당 동의를 받습니다. 이 페이지 열람이나 서비스 이용을 동의로 간주하지 않습니다. 거부해도 공개 문서와 기본 기능은 이용할 수 있습니다."
+            : "Optional collection will not start before the processing and transfer basis, recipient contacts, actual countries, timing, method, purpose-specific retention and refusal procedure are confirmed and disclosed. Where separate overseas-transfer consent is the basis, it must be distinguished from the two purpose choices. Reading this notice or using the site is not consent. Refusal does not prevent public reading or essential functions."}
+        </p>
+        <p>
+          {ko ? "제공자 공식 안내: " : "Official provider information: "}
+          <a href="https://huggingface.co/privacy">Hugging Face Privacy</a>
+          {" · "}
+          <a href="https://huggingface.co/docs/hub/storage-buckets-security">HF Bucket security</a>
+          {" · "}
+          <a href="https://vercel.com/legal/privacy-notice">Vercel Privacy</a>
+          {" · "}
+          <a href="https://vercel.com/legal/dpa">Vercel DPA</a>
+        </p>
+        <h2>{ko ? "쿠키와 브라우저의 선택 기록" : "Cookies and browser choices"}</h2>
+        <p>
+          {ko
+            ? "선택을 저장하면 목적별 허용 여부·안내 버전·선택 시각만 담은 설정 쿠키를 최대 90일 유지합니다. 이 쿠키에는 방문자 ID를 넣지 않습니다. 선택적 활동 세션이 시작되면 별도 서버 전용 쿠키를 사용하며, 30분 미활동 또는 총 12시간 후 만료됩니다. 새 방문을 장기간 연결하는 식별자로 사용하지 않습니다."
+            : "Saving choices keeps a preference cookie for up to 90 days containing only purpose choices, notice version and decision time, without a visitor ID. An optional activity session uses a separate HttpOnly cookie, expiring after 30 minutes idle or 12 hours total. It does not identify the visitor across future visits."}
         </p>
         <h2>{ko ? "만료·정기 삭제" : "Expiry and scheduled deletion"}</h2>
         <p>
@@ -96,8 +145,8 @@ export default async function PrivacyNotice({ params }: { params: Promise<{ loca
         </p>
         <p>
           {ko
-            ? "화면 하단 개인정보 설정에서 선택을 바꾸거나 활동 자료를 삭제할 수 있습니다. 현재 세션은 브라우저의 서버 전용 세션 정보로 요청하고, 다른 기기·이전 세션은 직접 보관한 삭제 코드를 사용합니다. 이메일 주소만으로는 임의 세션의 소유자를 확인하지 못할 수 있습니다. 삭제 완료가 확인되지 않으면 완료로 표시하지 않습니다."
-            : "Use Privacy settings in the footer to change choices or delete activity. This session uses its server-only browser session; another device or previous session requires its saved deletion code. Email alone may not identify a random session. Unconfirmed deletion is not presented as complete."}
+            ? "화면 하단 개인정보 설정에서 선택을 바꾸거나 활동 자료를 삭제할 수 있습니다. 현재 세션은 브라우저의 서버 전용 세션 정보로 요청하고, 다른 기기·이전 세션은 직접 보관한 삭제 코드를 사용합니다. 이메일 주소만으로는 임의 세션의 소유자를 확인하지 못할 수 있습니다. 이전 세션의 쿠키와 삭제 코드를 모두 잃으면 그 세션을 찾아 삭제할 수 없으며 정해진 만료·정리 기간을 적용합니다. 삭제 완료가 확인되지 않으면 완료로 표시하지 않습니다."
+            : "Use Privacy settings in the footer to change choices or delete activity. This session uses its server-only browser session; another device or previous session requires its saved deletion code. Email alone may not identify a random session. If both an earlier cookie and its saved code are lost, that session cannot be located for deletion; its scheduled expiry still applies. Unconfirmed deletion is not presented as complete."}
         </p>
         <p>
           {ko

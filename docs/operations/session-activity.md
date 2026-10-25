@@ -110,6 +110,79 @@ separate acceptance checks. No visitor data is used and this mode cannot enable 
 
 These implementation references do not establish account-specific legal compliance.
 
+## Provider and transfer review — 2026-10-25
+
+Collection remains disabled. This review is evidence about published terms and observed
+configuration, not a completed legal assessment or an authorization to process visitors.
+The notice's processing-review date is separate from its consent-policy version; before
+activation, finalize the transfer disclosure/consent flow and update the policy version.
+
+### Verified distinctions
+
+- The production Vercel function region was `iad1` (Washington, D.C., USA). This is not a
+  guarantee that CDN traffic, operational logs, remote support and subprocessors stay there.
+- HF's S3 gateway uses `https://s3.hf.co/<namespace>` and HF-issued `HFAK` credentials derived
+  from an HF access token. The AWS SDK and AWS-style signing do not make AWS the direct
+  storage provider or import an AWS customer agreement. The `us-east-1` gateway setting
+  alone is not proof of the physical location of every copy.
+- HF's general privacy policy lists AWS, Google Cloud, OVHCloud and affiliates among service
+  providers. That general list is not a bucket-specific data-flow map. Do not infer that all
+  listed companies receive this application's activity payload.
+- Application retention (two hours or 90 days, followed by an hourly sweep) and minimal
+  91-day deletion controls do not establish a provider backup erasure deadline.
+- Model-training/data-sharing preferences on the hosting account are separate from visitors'
+  two activity-purpose choices. Check them before accepting activity; do not describe the
+  site's inactive training jobs as proof that every provider's optional reuse is disabled.
+
+### Unresolved before capture
+
+1. Obtain the applicable HF PRO processor terms or written clarification for private Buckets,
+   including instructions, confidentiality, incident/rights handling, subprocessor changes,
+   access countries and deletion of backups/replicas. Public PRO documentation and general
+   terms were found; a PRO-specific visitor-data DPA and backup deletion deadline were not.
+   HF advertises DPAs through Enterprise, which neither proves that PRO is covered nor that
+   an Enterprise purchase is legally required in every case. Contacts: `legal@huggingface.co`
+   and `privacy@huggingface.co`. No support message has been sent on the operator's behalf.
+2. Clarify Vercel Hobby contract scope: its Terms incorporate the DPA as applicable, while
+   the published DPA introduction expressly describes Pro/Enterprise. Do not turn the public
+   existence of that document into confirmed Hobby coverage or an automatic paid-plan requirement.
+   Contact `privacy@vercel.com` or the official support channel. Inspect the current subprocessor
+   list in the Trust Center; its general page alone did not expose the full list in this review.
+3. Establish the applicable Korean overseas-transfer basis. Article 28-8 includes multiple
+   bases; optional analytics must not be assumed necessary for performing the reading-service
+   contract. If relying on separate transfer consent, disclose items, actual countries,
+   recipients/contacts, timing/method, purposes/retention and refusal procedures/effects, and
+   record that consent separately from the two purpose choices. A policy page, GDPR/SOC 2
+   marketing claim, encryption or operator flag is not that visitor consent.
+4. Observe a successful natural `schedule` run with complete cleanup results, review edge
+   request limits, then recheck disabled/enabled behavior and withdrawal/deletion. A successful
+   manual dispatch or a green job that skipped cleanup does not prove scheduled retention.
+5. Confirm operator contact response, bounded purposes and retention; define incident handling
+   and future export/training deletion propagation. No private Dataset export, actual training,
+   visitor role inference or permanent raw-log retention is enabled by this implementation.
+
+### Primary sources checked
+
+- [HF Terms](https://huggingface.co/terms-of-service), published effective date 2022-09-15;
+  applies with referenced supplemental terms and any account-specific agreement. The linked
+  supplemental PDF returned HTTP 403 in this review, so its current contents were not verified.
+- [HF Privacy](https://huggingface.co/privacy), published effective date 2023-03-28;
+  general international processing, service providers and retention, not a precise Bucket backup SLA.
+- [HF PRO](https://huggingface.co/docs/hub/pro),
+  [Bucket security](https://huggingface.co/docs/hub/storage-buckets-security),
+  [storage regions](https://huggingface.co/docs/hub/storage-regions) and
+  [S3 compatibility](https://huggingface.co/docs/hub/storage-buckets-s3).
+- [Vercel Terms](https://vercel.com/legal/terms), updated 2026-10-19;
+  [DPA](https://vercel.com/legal/dpa), effective 2026-03-31;
+  [Privacy](https://vercel.com/legal/privacy-notice), updated 2026-06-01;
+  [Trust Center/subprocessors](https://vercel.com/legal/sub-processors) and
+  [data preference explanation](https://vercel.com/changelog/updates-to-terms-of-service-march-2026).
+- [AWS DPA](https://d1.awsstatic.com/legal/aws-dpa/aws-dpa.pdf): supplements an AWS customer
+  agreement. It does not establish this HF account's contract or its precise subprocessor chain.
+- [Korean PIPA Article 28-8](https://www.law.go.kr/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1034515797),
+  effective 2026-09-11. Provider EU/UK transfer mechanisms do not by themselves establish this
+  Korean site's applicable transfer basis.
+
 ## Local reading-layout review
 
 The loopback fixture includes ten author-written example documents (five kinds in Korean and
