@@ -2,7 +2,7 @@ name: Enforce private activity retention
 
 on:
   schedule:
-    - cron: "23 * * * *"
+    - cron: "18 * * * *"
   workflow_dispatch:
     inputs:
       apply:
