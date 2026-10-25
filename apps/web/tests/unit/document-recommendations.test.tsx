@@ -16,7 +16,6 @@ import {
 import { DocumentRecommendations } from "../../src/components/document-recommendations";
 import {
   ReadingSuggestion,
-  SessionRecommendationStatus,
   READING_HINT_PREFERENCE,
   READING_HINT_DISMISSED,
 } from "../../src/components/reading-suggestion";
@@ -248,7 +247,7 @@ describe("bounded public recommendation cache", () => {
     expect(mocks.cache.mock.calls).toEqual([
       [recommendationCacheKey(source), { revalidate: 300, tags: ["archive:public:ko"] }],
       [
-        ["editorial-v1", "public-catalogue", "ko"],
+        ["editorial-v2", "public-catalogue", "ko"],
         { revalidate: 300, tags: ["archive:public:ko"] },
       ],
     ]);
@@ -285,29 +284,9 @@ describe("honest recommendation interface", () => {
       candidate(2).path,
     );
     expect(screen.getByText("검증된 읽기 흐름 집계가 아직 없습니다.")).toBeInTheDocument();
-    expect(screen.getByText("현재 행동 기반 맞춤 추천을 사용하지 않습니다.")).toBeInTheDocument();
+    expect(screen.getByText(/브라우저 내 맞춤은 꺼져 있습니다/)).toBeInTheDocument();
     await act(() => Promise.resolve());
-    expect(fetch).toHaveBeenCalledWith("/api/privacy", { cache: "no-store" });
-  });
-  it("responds to separate session consent but never claims a model is running", async () => {
-    render(<SessionRecommendationStatus locale="ko" />);
-    await act(() => Promise.resolve());
-    act(() =>
-      window.dispatchEvent(
-        new CustomEvent("archive:privacy-change", {
-          detail: { enabled: true, sessionPersonalization: true, modelImprovement: false },
-        }),
-      ),
-    );
-    expect(screen.getByText(/개인화 모델은 아직 연결하지 않았습니다/)).toBeInTheDocument();
-    act(() =>
-      window.dispatchEvent(
-        new CustomEvent("archive:privacy-change", {
-          detail: { enabled: true, sessionPersonalization: false, modelImprovement: true },
-        }),
-      ),
-    );
-    expect(screen.getByText("현재 행동 기반 맞춤 추천을 사용하지 않습니다.")).toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
 

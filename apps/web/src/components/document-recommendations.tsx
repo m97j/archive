@@ -2,7 +2,8 @@ import type { Locale } from "@archive/contracts";
 import Link from "next/link";
 import type { DocumentRecommendation, RecommendationSet } from "@/lib/document-recommendations";
 import { contentKindLabel } from "@/lib/site-copy";
-import { ReadingSuggestion, SessionRecommendationStatus } from "./reading-suggestion";
+import { ReadingSuggestion } from "./reading-suggestion";
+import { BrowserReadingSuggestions } from "./browser-reading";
 import styles from "./document-recommendations.module.css";
 
 function RecommendationLinks({
@@ -102,7 +103,11 @@ export function DocumentRecommendations({
           <h3 id="session-reading-title" className={styles.sectionTitle}>
             {korean ? "이번 세션 맞춤" : "For this reading session"}
           </h3>
-          <SessionRecommendationStatus locale={locale} />
+          <BrowserReadingSuggestions
+            locale={locale}
+            source={recommendations.browserSession?.source}
+            candidates={recommendations.browserSession?.candidates}
+          />
         </section>
       </div>
       {recommendations.related.length ? (

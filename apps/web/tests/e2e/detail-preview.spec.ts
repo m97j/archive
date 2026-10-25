@@ -119,6 +119,49 @@ test("privacy notice, controls and disabled capture remain honest", async ({ pag
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "읽기는 자유롭게. 선택은 명확하게.",
   );
-  await expect(page.getByText("현재 수집 비활성화", { exact: true })).toBeVisible();
+  await expect(page.getByText("현재 서버 수집 비활성화", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("browser-only suggestions need opt-in and do not persist or transmit reading", async ({
+  page,
+}) => {
+  const uploads: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (
+      request.method() === "POST" &&
+      (path.startsWith("/api/telemetry") || path === "/api/privacy")
+    )
+      uploads.push(path);
+  });
+  await page.goto("/ko/examples/research/hybrid-retrieval");
+  await page.getByRole("button", { name: "개인정보 설정", exact: true }).click();
+  const choice = page.getByLabel(/이 탭에서만 이어 읽기 맞춤/);
+  await expect(choice).not.toBeChecked();
+  await expect(page.getByLabel(/이번 세션 맞춤 처리/)).toBeDisabled();
+  const savedBefore = await page.evaluate(() =>
+    JSON.stringify([Object.entries(localStorage), Object.entries(sessionStorage)]),
+  );
+  await choice.check();
+  await page.getByRole("button", { name: "개인정보 설정 닫기" }).click();
+  await page.locator("[data-compiled-document] h2").first().scrollIntoViewIfNeeded();
+  await expect(page.getByText(/이 탭에서 읽은 공개 문서의 태그로 정렬했습니다/)).toBeVisible({
+    timeout: 25_000,
+  });
+  const suggestions = page.locator('[aria-labelledby="session-reading-title"]');
+  await expect(suggestions.getByRole("link").first()).toHaveAttribute("href", /^\/ko\/examples\//);
+  expect(uploads).toEqual([]);
+  expect(
+    await page.evaluate(() =>
+      JSON.stringify([Object.entries(localStorage), Object.entries(sessionStorage)]),
+    ),
+  ).toBe(savedBefore);
+  expect(
+    (await page.context().cookies()).some((cookie) => cookie.name.includes("activity-session")),
+  ).toBe(false);
+  await page.reload();
+  await expect(page.getByText(/브라우저 내 맞춤은 꺼져 있습니다/)).toBeVisible();
+  expect((await page.request.get("/api/privacy")).ok()).toBe(true);
+  expect(uploads).toEqual([]);
 });

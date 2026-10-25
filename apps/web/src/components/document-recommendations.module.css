@@ -255,3 +255,10 @@
     width: min(23rem, calc(100vw - 2rem));
   }
 }
+
+.browserReason {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-top: 0.3rem;
+}

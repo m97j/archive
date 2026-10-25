@@ -155,3 +155,14 @@
     padding: 1.1rem;
   }
 }
+
+.privacy-local-reset {
+  justify-self: start;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--field);
+  color: var(--ink);
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+}

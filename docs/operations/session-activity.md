@@ -14,6 +14,25 @@ The browser's public revision number is checked against the resolved publication
 that refer to another revision are ignored rather than assigned to new headings. Section dwell
 without a coherent revision is not retained; unrelated valid events in the same batch can still pass.
 
+## Browser-only reading suggestions
+
+A separate opt-in in Privacy settings enables tab-memory-only suggestions while all server
+collection gates remain false. It does not accept either server purpose, start an upload
+session, issue a visitor identifier, or use cookies, localStorage or sessionStorage.
+
+After at least 15 seconds of visible public-document reading (excluding hidden tabs and
+open dialogs), a bounded set of public tags and read paths reorders up to three suggestions
+from at most 24 server-validated public candidates. This is a tag-overlap rule, not a learned
+personalization model or occupation/intent inference. It records no section timeline, raw click history or
+precise dwell timestamps. State holds at most 48 tag counters and 24 read paths in browser RAM.
+Reloading, closing the tab, switching off, or 30 minutes without a new qualifying reading
+record clears both the choice and state. Ordinary navigation and hosting logs are separate.
+
+The browser choice is independent from the existing two remote purposes. Decline-all also
+clears local state. Existing end-of-reading hint preferences remain separate; they store
+only a reader-controlled on/off choice rather than a behavior history. No GA4 integration,
+public transition aggregate, HF upload, model training or analysis project is added here.
+
 ## Storage and retention
 
 The owned prefix is `activity/v2/` only:

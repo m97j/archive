@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SessionActivity } from "./session-activity";
+import { BrowserReadingPreference } from "./browser-reading";
+import { setBrowserReadingEnabled } from "@/lib/browser-reading";
 
 interface Preferences {
   enabled: boolean;
@@ -60,6 +62,7 @@ export function PrivacyPreferences({ locale }: { locale: string }) {
   }, [open]);
 
   async function choose(session: boolean, model: boolean) {
+    if (!session && !model) setBrowserReadingEnabled(false);
     setBusy(true);
     setMessage("");
     // Stop immediately: a failed withdrawal never restarts this page's listeners.
@@ -193,24 +196,25 @@ export function PrivacyPreferences({ locale }: { locale: string }) {
         </div>
         <h2 id="privacy-title">
           {ko
-            ? "맞춤 처리와 보관은, 따로 선택해요."
-            : "Personalization and retention. Your choices, separately."}
+            ? "이 탭의 맞춤과 서버 보관을 구분해요."
+            : "Separate this tab’s suggestions from server retention."}
         </h2>
         <p>
           {ko
             ? "검색·공개 문서·기본 읽기 성능은 선택과 무관하게 같습니다. 개인화 모델은 아직 제공하지 않습니다."
             : "Search, public documents and reading performance are the same for everyone. A personalization model is not yet available."}
         </p>
+        <BrowserReadingPreference locale={locale} />
         {!preferences?.enabled && (
           <p className="privacy-status" role="status">
             {ko
-              ? "현재 수집은 비활성화되어 있습니다. 운영 설정과 보관·삭제 검증 후에만 켭니다."
-              : "Collection is disabled until operating settings, retention and deletion have been verified."}
+              ? "서버 활동 수집·학습용 보관은 꺼져 있습니다. 아래 서버 선택은 아직 사용할 수 없으며, 브라우저 내 맞춤 허용으로 활성화되지 않습니다."
+              : "Server activity collection and training-data retention are off. The server choices below remain unavailable and are not enabled by browser-only adaptation."}
           </p>
         )}
         <fieldset className="privacy-options" disabled={busy || !preferences?.enabled}>
           <legend className="privacy-detail">
-            {ko ? "선택적 처리 목적" : "Optional purposes"}
+            {ko ? "서버로 전송하는 선택적 목적" : "Optional purposes involving server transmission"}
           </legend>
           <label>
             <input
@@ -219,7 +223,11 @@ export function PrivacyPreferences({ locale }: { locale: string }) {
               onChange={(event) => setSession(event.target.checked)}
             />
             <span>
-              <strong>{ko ? "이번 세션 맞춤 처리" : "Processing for this session"}</strong>
+              <strong>
+                {ko
+                  ? "이번 세션 맞춤 처리 · 서버 전송"
+                  : "Processing for this session · server transmission"}
+              </strong>
               <small>
                 {ko
                   ? `공개 문서 이동과 활성 읽기 시간을 짧은 세션으로 처리합니다. 처리 유효기간은 ${hours}시간이며, 만료 자료는 다음 정기 작업에서 삭제합니다. 다른 방문과 연결하지 않습니다.`

@@ -12,61 +12,6 @@ export const READING_HINT_VISIBLE_SECONDS = 15;
 const READING_HINT_CHANGE = "archive:reading-hint-change";
 const temporaryPreferences = new Map<string, string>();
 
-interface SessionConsent {
-  enabled: boolean;
-  sessionPersonalization: boolean;
-}
-
-/** This status reads only consent. It neither infers a role nor installs activity tracking. */
-export function SessionRecommendationStatus({ locale }: { locale: Locale }) {
-  const [allowed, setAllowed] = useState(false);
-  useEffect(() => {
-    let active = true;
-    let changed = false;
-    const apply = (value: SessionConsent) =>
-      setAllowed(Boolean(value.enabled && value.sessionPersonalization));
-    const change = (event: Event) => {
-      changed = true;
-      apply((event as CustomEvent<SessionConsent>).detail);
-    };
-    window.addEventListener("archive:privacy-change", change);
-    void fetch("/api/privacy", { cache: "no-store" })
-      .then((response) => (response.ok ? (response.json() as Promise<SessionConsent>) : undefined))
-      .then((value) => {
-        if (active && !changed && value) apply(value);
-      })
-      .catch(() => {
-        /* A missing preference never grants consent. */
-      });
-    return () => {
-      active = false;
-      window.removeEventListener("archive:privacy-change", change);
-    };
-  }, []);
-  const korean = locale === "ko";
-  return (
-    <>
-      <p className={styles.empty}>
-        {allowed
-          ? korean
-            ? "세션 맞춤 처리는 허용했습니다. 개인화 모델은 아직 연결하지 않았습니다."
-            : "Session processing is allowed. No personalization model is connected yet."
-          : korean
-            ? "현재 행동 기반 맞춤 추천을 사용하지 않습니다."
-            : "Behavior-based personalization is not in use."}
-      </p>
-      <button
-        type="button"
-        className={styles.textButton}
-        onClick={() => window.dispatchEvent(new Event("archive:privacy-open"))}
-      >
-        {korean ? "맞춤 처리 설정" : "Session preferences"}
-        <span aria-hidden="true">↗</span>
-      </button>
-    </>
-  );
-}
-
 function readStored(storage: "local" | "session", key: string): string | null {
   try {
     return (storage === "local" ? localStorage : sessionStorage).getItem(key);

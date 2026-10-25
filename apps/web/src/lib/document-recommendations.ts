@@ -5,7 +5,7 @@ import {
   type PublicDocument,
 } from "@archive/contracts";
 
-export const RECOMMENDATION_VERSION = "editorial-v1";
+export const RECOMMENDATION_VERSION = "editorial-v2";
 export const RECOMMENDATION_CATALOG_PAGE_SIZE = 100;
 export const RECOMMENDATION_CATALOG_MAX_PAGES = 4;
 export const RECOMMENDATION_LIMIT = 3;
@@ -36,6 +36,10 @@ export interface RecommendationSet {
   nextRead: DocumentRecommendation[];
   aggregateUpdatedAt?: string;
   available: boolean;
+  browserSession?: {
+    source: { path: string; locale: Locale; tags: string[] };
+    candidates: PublicContentSummary[];
+  };
 }
 
 function strings(value: unknown): string[] {
@@ -161,7 +165,24 @@ export function selectDocumentRecommendations(
     .slice(0, RECOMMENDATION_LIMIT)
     .map(({ document, reason, sharedTags }) => ({ document, reason, sharedTags }));
 
-  const result: RecommendationSet = { related, nextRead: [], available: true };
+  const result: RecommendationSet = {
+    related,
+    nextRead: [],
+    available: true,
+    browserSession: {
+      source: { path: source.path, locale: source.locale, tags: sourceTags },
+      candidates: candidates.slice(0, 24).map((item) => ({
+        contentId: item.contentId,
+        kind: item.kind,
+        locale: item.locale,
+        path: item.path,
+        title: item.title,
+        ...(item.description === undefined ? {} : { description: item.description }),
+        publishedAt: item.publishedAt,
+        tags: strings(item.tags),
+      })),
+    },
+  };
   if (
     !snapshot ||
     snapshot.locale !== source.locale ||

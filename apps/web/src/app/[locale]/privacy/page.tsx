@@ -21,8 +21,8 @@ export default async function PrivacyNotice({ params }: { params: Promise<{ loca
         <h1>{ko ? "읽기는 자유롭게. 선택은 명확하게." : "Open reading. Clear choices."}</h1>
         <p>
           {ko
-            ? "세션 맞춤 처리와 기능 개선용 학습 자료 보관을 구분합니다."
-            : "Session processing and retention for improving models are separate choices."}
+            ? "브라우저 안의 맞춤과 서버로 보내는 활동 자료를 구분합니다."
+            : "Browser-only suggestions and server activity processing are separate choices."}
         </p>
         <div className="document-meta">
           <span>
@@ -35,8 +35,8 @@ export default async function PrivacyNotice({ params }: { params: Promise<{ loca
                 ? "선택적 수집 설정됨"
                 : "Optional collection configured"
               : ko
-                ? "현재 수집 비활성화"
-                : "Collection disabled"}
+                ? "현재 서버 수집 비활성화"
+                : "Server collection disabled"}
           </span>
         </div>
       </header>
@@ -52,6 +52,17 @@ export default async function PrivacyNotice({ params }: { params: Promise<{ loca
           {ko
             ? "공개 문서 열람, 일반·고도화 검색, 콘텐츠 정보 기반 관련 문서, 기본 화면 성능은 선택적 수집 동의와 무관합니다. 방문자 직업·역할 추정과 개인화 모델은 현재 실행하지 않습니다."
             : "Public reading, search, content-based related documents and essential performance do not depend on optional collection. No visitor occupation inference or personalization model is running."}
+        </p>
+        <h2>{ko ? "브라우저 안에서만 이어 읽기" : "Reading suggestions confined to this tab"}</h2>
+        <p>
+          {ko
+            ? "개인정보 설정에서 별도로 허용하면, 화면에 보이는 공개 문서를 일정 시간 읽었을 때 문서 태그와 제한된 읽은 문서 목록을 탭 메모리에만 유지해 다음 글을 정렬합니다. 직업·신원을 추정하거나 개인화 모델을 실행하지 않습니다. 서버·Google·HF로 전송하지 않고 UUID, 쿠키, localStorage, sessionStorage에 행동 이력을 기록하지 않습니다."
+            : "A separate Privacy setting can use tags from visible public documents and a bounded read-document list in tab memory to order next reads. It does not infer identity or occupation, run a personalization model, upload activity to the server, Google or HF, issue a visitor UUID, or persist behavior in cookies, localStorage or sessionStorage."}
+        </p>
+        <p>
+          {ko
+            ? "이 선택과 읽기 정보는 새로고침·탭 종료·기능 끄기 또는 30분 동안 새 읽기 기록이 없을 때 초기화됩니다. 거부해도 기본 읽기·검색·콘텐츠 기반 관련 문서는 같습니다. 이 선택은 아래 서버 전송·학습 자료 보관 동의와 독립적이며, 해당 서버 수집을 켜지 않습니다. 일반적인 페이지 요청과 플랫폼 보안 로그는 별개입니다."
+            : "The choice and reading state reset on reload, tab closure, switching off, or 30 minutes without a new reading record. Declining preserves reading, search and content-based connections. This choice is independent of the server-transmission and model-retention choices below and does not enable them. Ordinary page requests and hosting security logs are separate."}
         </p>
         <h2>{ko ? "두 가지 선택적 목적" : "Two optional purposes"}</h2>
         <ul>
@@ -80,8 +91,8 @@ export default async function PrivacyNotice({ params }: { params: Promise<{ loca
         <h2>{ko ? "처리 업체와 저장 장소" : "Providers and storage locations"}</h2>
         <p>
           {ko
-            ? "선택적 활동 수집은 현재 비활성화되어 있습니다. 활성화할 경우 브라우저에서 사이트 서버로 전송한 최소 활동 자료를 검증한 뒤, 별도 비공개 저장소에 암호화하여 보관하는 구조입니다. 이 원로그를 Supabase DB나 공개 Dataset에 저장하지 않습니다."
-            : "Optional activity collection is currently disabled. The intended flow validates minimum records sent from the browser to the site server, then encrypts them in separate private storage. Raw activity is not stored in the Supabase database or a public Dataset."}
+            ? "서버로 보내는 선택적 활동 수집은 현재 비활성화되어 있습니다. 활성화할 경우 브라우저에서 사이트 서버로 전송한 최소 활동 자료를 검증한 뒤, 별도 비공개 저장소에 암호화하여 보관하는 구조입니다. 이 원로그를 Supabase DB나 공개 Dataset에 저장하지 않습니다."
+            : "Optional server activity collection is currently disabled. The intended flow validates minimum records sent from the browser to the site server, then encrypts them in separate private storage. Raw activity is not stored in the Supabase database or a public Dataset."}
         </p>
         <ul>
           <li>
