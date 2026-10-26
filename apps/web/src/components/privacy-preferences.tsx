@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { GoogleAnalytics, GoogleAnalyticsPreference } from "./google-analytics";
+import { saveAnalyticsChoice } from "@/lib/google-analytics";
+import type { GoogleAnalyticsSettings } from "@/lib/google-analytics-settings";
 import { SessionActivity } from "./session-activity";
 import { BrowserReadingPreference } from "./browser-reading";
 import { setBrowserReadingEnabled } from "@/lib/browser-reading";
@@ -14,7 +17,13 @@ interface Preferences {
   retention?: { sessionHours: number; modelDays: number };
 }
 
-export function PrivacyPreferences({ locale }: { locale: string }) {
+export function PrivacyPreferences({
+  locale,
+  analytics = { enabled: false, measurementId: "", origin: "" },
+}: {
+  locale: string;
+  analytics?: GoogleAnalyticsSettings;
+}) {
   const ko = locale === "ko";
   const [preferences, setPreferences] = useState<Preferences>();
   const [sessionPersonalization, setSession] = useState(false);
@@ -62,7 +71,12 @@ export function PrivacyPreferences({ locale }: { locale: string }) {
   }, [open]);
 
   async function choose(session: boolean, model: boolean) {
-    if (!session && !model) setBrowserReadingEnabled(false);
+    const analyticsWasLoaded = Boolean(document.querySelector("script[data-archive-analytics]"));
+    let analyticsSaved = false;
+    if (!session && !model) {
+      setBrowserReadingEnabled(false);
+      if (analytics.enabled) analyticsSaved = saveAnalyticsChoice(false, true);
+    }
     setBusy(true);
     setMessage("");
     // Stop immediately: a failed withdrawal never restarts this page's listeners.
@@ -88,6 +102,7 @@ export function PrivacyPreferences({ locale }: { locale: string }) {
       setOpen(false);
       setRecovery("");
       trigger.current?.focus();
+      if (analyticsWasLoaded && analyticsSaved) window.location.reload();
     } catch (error) {
       setMessage(
         error instanceof Error && error.message === "DELETE_PENDING"
@@ -169,6 +184,7 @@ export function PrivacyPreferences({ locale }: { locale: string }) {
   return (
     <>
       <SessionActivity preferences={preferences} />
+      <GoogleAnalytics settings={analytics} locale={locale} />
       <button className="privacy-trigger" ref={trigger} onClick={() => setOpen(true)}>
         {ko ? "개인정보 설정" : "Privacy settings"}
       </button>
@@ -195,9 +211,7 @@ export function PrivacyPreferences({ locale }: { locale: string }) {
           </button>
         </div>
         <h2 id="privacy-title">
-          {ko
-            ? "이 탭의 맞춤과 서버 보관을 구분해요."
-            : "Separate this tab’s suggestions from server retention."}
+          {ko ? "맞춤과 분석을 직접 선택해요." : "Choose your reading and analytics preferences."}
         </h2>
         <p>
           {ko
@@ -205,6 +219,7 @@ export function PrivacyPreferences({ locale }: { locale: string }) {
             : "Search, public documents and reading performance are the same for everyone. A personalization model is not yet available."}
         </p>
         <BrowserReadingPreference locale={locale} />
+        <GoogleAnalyticsPreference locale={locale} enabled={analytics.enabled} />
         {!preferences?.enabled && (
           <p className="privacy-status" role="status">
             {ko

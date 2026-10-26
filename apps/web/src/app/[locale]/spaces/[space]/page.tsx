@@ -28,7 +28,11 @@ export default async function SpacePage({
     /* Keep the repository-backed project overview available. */
   }
   return (
-    <section className="space-page">
+    <section
+      className="space-page"
+      data-analytics-path={`/${locale}/spaces/${values.space}`}
+      data-analytics-title={`${spaceLabel(space)} · marchivej`}
+    >
       <div className="space-heading">
         <p className="eyebrow">{spaceLabel(space)}</p>
         <h1>{navigation?.label ?? copy.spaces[space]}</h1>

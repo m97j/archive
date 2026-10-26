@@ -21,7 +21,11 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
   const locale = requireLocale((await params).locale);
   const copy = siteCopy(locale);
   return (
-    <div className="home-page">
+    <div
+      className="home-page"
+      data-analytics-path={`/${locale}`}
+      data-analytics-title="Marchivej · Minjae"
+    >
       <section className="home-hero" aria-labelledby="home-title">
         <div className="intro-copy">
           <p className="eyebrow">{copy.heroEyebrow}</p>

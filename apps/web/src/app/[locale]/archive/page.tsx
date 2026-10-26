@@ -44,7 +44,11 @@ export default async function ArchivePage({
   const next = searchQuery({ ...filters, cursor: page?.nextCursor });
 
   return (
-    <section className="archive-browser">
+    <section
+      className="archive-browser"
+      data-analytics-path={`/${locale}/archive`}
+      data-analytics-title="Archive · marchivej"
+    >
       <div className="browser-heading">
         <p className="eyebrow">{copy.browseEyebrow}</p>
         <h1>{copy.browseTitle}</h1>

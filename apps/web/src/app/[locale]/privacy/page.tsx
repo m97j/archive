@@ -28,7 +28,7 @@ export default async function PrivacyNotice({ params }: { params: Promise<{ loca
           <span>
             {ko ? "안내 버전" : "Notice version"}: {policy.version}
           </span>
-          <span>{ko ? "처리 현황 확인: 2026-10-25" : "Processing review: 2026-10-25"}</span>
+          <span>{ko ? "처리 현황 확인: 2026-10-26" : "Processing review: 2026-10-26"}</span>
           <span>
             {policy.enabled
               ? ko
@@ -53,6 +53,38 @@ export default async function PrivacyNotice({ params }: { params: Promise<{ loca
             ? "공개 문서 열람, 일반·고도화 검색, 콘텐츠 정보 기반 관련 문서, 기본 화면 성능은 선택적 수집 동의와 무관합니다. 방문자 직업·역할 추정과 개인화 모델은 현재 실행하지 않습니다."
             : "Public reading, search, content-based related documents and essential performance do not depend on optional collection. No visitor occupation inference or personalization model is running."}
         </p>
+        <h2 id="google-analytics">
+          Google Analytics · {ko ? "선택적 방문 분석" : "Optional visit analytics"}
+        </h2>
+        <p>
+          {ko
+            ? "별도로 허용한 경우에만 Google 태그를 불러오며, 공개 페이지의 주소·제목, 페이지 조회, 문서의 90% 읽기 지점 도달, 참여 시간과 Google의 기본 기기·대략적 지역 통계를 분석합니다. 분석용 _ga 계열 쿠키를 최대 90일 사용합니다. GA의 식별자는 완전한 익명정보가 아니며 브라우저 내 이어 읽기 맞춤이나 HF 원로그 보관 동의와 연결하지 않습니다."
+            : "Google tags load only after a separate opt-in to measure public page paths and titles, page views, reaching 90% of a document, engagement time and Google's basic device and approximate-location statistics. _ga analytics cookies last up to 90 days. GA identifiers are not fully anonymous and are independent of tab-only suggestions and HF raw-data retention."}
+        </p>
+        <p>
+          {ko
+            ? "Google LLC(미국) 및 Google의 처리 업체가 방문 분석·사이트 개선을 위해 처리합니다. 허용 이후 이벤트가 발생할 때 브라우저에서 HTTPS로 전송되며, 미국 및 Google의 글로벌 처리 인프라에서 처리될 수 있습니다. 한국 전용 저장 지역을 선택한 서비스가 아닙니다. 국외 처리에 동의하지 않으면 분석을 거부할 수 있고 공개 문서·검색 이용에 제한은 없습니다."
+            : "Google LLC (USA) and its processing providers handle analytics for site improvement. After consent, the browser sends events over HTTPS to Google's US and global processing infrastructure. This is not Korea-only storage. Declining overseas analytics leaves public reading and search available."}
+        </p>
+        <p>
+          {ko
+            ? "이벤트·사용자 수준 자료의 GA4 보관 설정은 2개월, 새 활동 시 사용자 보관 기간 재설정은 끔으로 운영합니다. 이 설정이 모든 표준 집계 보고서의 삭제 기한을 뜻하지는 않습니다. 검색어·폼 입력·이메일·인증 코드와 URL의 query/hash, 외부 링크·다운로드 주소는 이 연결에서 전송하지 않습니다. Google Signals·광고 목적의 허용·사용자 계정 ID 연결·BigQuery 원자료 내보내기는 사용하지 않습니다."
+            : "GA4 user/event retention is configured to 2 months with reset on new activity off; this is not an erasure deadline for all standard aggregate reports. This integration excludes search terms, form input, email, authentication codes, query/hash values and outbound/download URLs. Google Signals, advertising consent, account User-ID linking and BigQuery raw exports are not used."}
+        </p>
+        <p>
+          {ko
+            ? "선택 기록에는 허용 여부·버전·만료 시각만 담아 브라우저 localStorage에 최대 90일 저장하며, 방문자 ID나 행동 이력은 넣지 않습니다. 거부·미선택 상태에서는 Google 태그와 분석 요청을 보내지 않는 Basic Consent Mode를 사용합니다. 개인정보 설정에서 철회하면 새 측정을 차단하고 분석 쿠키를 지우며, 이미 태그가 실행된 화면은 새로고침합니다. 다른 탭에도 철회를 전달합니다. 이미 전송된 자료의 삭제는 철회와 별개이므로 운영자에게 문의해 주세요."
+            : "A localStorage preference contains only permission, version and expiry for up to 90 days, without a visitor ID or reading history. Basic Consent Mode blocks Google tags and analytics requests before consent or after refusal. Withdrawal in Privacy settings blocks new measurement, clears analytics cookies and reloads a page where the tag ran; other tabs receive the change. Previously transmitted data requires a separate deletion request to the operator."}
+        </p>
+        <p>
+          <a href="https://policies.google.com/privacy">Google Privacy</a>
+          {" · "}
+          <a href="https://business.safety.google/adsprocessorterms/">Google processing terms</a>
+          {" · "}
+          <a href="https://business.safety.google/subprocessors/">Google subprocessors</a>
+          {" · "}
+          <a href={`mailto:${policy.contact}`}>{policy.contact}</a>
+        </p>
         <h2>{ko ? "브라우저 안에서만 이어 읽기" : "Reading suggestions confined to this tab"}</h2>
         <p>
           {ko
@@ -64,7 +96,7 @@ export default async function PrivacyNotice({ params }: { params: Promise<{ loca
             ? "이 선택과 읽기 정보는 새로고침·탭 종료·기능 끄기 또는 30분 동안 새 읽기 기록이 없을 때 초기화됩니다. 거부해도 기본 읽기·검색·콘텐츠 기반 관련 문서는 같습니다. 이 선택은 아래 서버 전송·학습 자료 보관 동의와 독립적이며, 해당 서버 수집을 켜지 않습니다. 일반적인 페이지 요청과 플랫폼 보안 로그는 별개입니다."
             : "The choice and reading state reset on reload, tab closure, switching off, or 30 minutes without a new reading record. Declining preserves reading, search and content-based connections. This choice is independent of the server-transmission and model-retention choices below and does not enable them. Ordinary page requests and hosting security logs are separate."}
         </p>
-        <h2>{ko ? "두 가지 선택적 목적" : "Two optional purposes"}</h2>
+        <h2>{ko ? "비활성 상태로 보존한 HF 수집 기능" : "HF collection retained but inactive"}</h2>
         <ul>
           <li>
             {ko

@@ -59,6 +59,10 @@ jobs:
 
       - name: Build deployable applications
         run: pnpm build
+        env:
+          GA4_ENABLED: "true"
+          GA4_MEASUREMENT_ID: G-TEST000000
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3010
 
       - name: Install UI test browser
         run: pnpm exec playwright install --with-deps chromium
@@ -67,3 +71,6 @@ jobs:
         run: pnpm test:e2e
         env:
           ARCHIVE_E2E_PRODUCTION: "1"
+          GA4_ENABLED: "true"
+          GA4_MEASUREMENT_ID: G-TEST000000
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3010

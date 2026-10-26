@@ -48,7 +48,12 @@ export default async function DocumentPage({ params }: { params: PageParams }) {
   }
   const copy = siteCopy(locale);
   return (
-    <article className="document-page">
+    <article
+      className="document-page"
+      data-analytics-path={result.path}
+      data-analytics-title={result.title}
+      data-analytics-document="true"
+    >
       <nav className="breadcrumbs" aria-label={locale === "ko" ? "현재 위치" : "Breadcrumb"}>
         <Link href={`/${locale}`}>{copy.home}</Link>
         <span aria-hidden="true">/</span>

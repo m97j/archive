@@ -166,3 +166,67 @@
   padding: 0.7rem 1rem;
   cursor: pointer;
 }
+
+.analytics-banner {
+  position: fixed;
+  inset: auto 1rem 1rem;
+  z-index: 60;
+  max-width: 52rem;
+  margin-inline: auto;
+  padding: 1.1rem 1.25rem;
+  display: grid;
+  gap: 1rem;
+  background: var(--canvas);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  box-shadow: 0 12px 48px #15102024;
+}
+.analytics-banner p {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  margin: 0.35rem 0;
+}
+.analytics-banner a {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+.analytics-banner-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.analytics-banner-actions button {
+  flex: 1;
+  min-height: 44px;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.7rem;
+  border: 1px solid var(--line);
+  background: var(--field);
+  color: var(--ink);
+  cursor: pointer;
+}
+.analytics-banner-actions button:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+@media (min-width: 720px) {
+  .analytics-banner {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+  .analytics-banner-actions {
+    max-width: 17rem;
+  }
+}
+
+/* Keep the footer reachable above a non-modal, fixed consent prompt. */
+.site-shell:has(.analytics-banner) {
+  padding-bottom: 21rem;
+}
+@media (min-width: 720px) {
+  .site-shell:has(.analytics-banner) {
+    padding-bottom: 13rem;
+  }
+}
