@@ -58,3 +58,74 @@ routes, expiry, storage failures, cookie removal and cross-tab withdrawal. Brows
 intercept the Google tag and all measurement destinations, so test visits do not populate
 the production property. Confirm production tag delivery with an isolated browser and
 intercepted measurement requests before inspecting real consented visits in GA Realtime.
+
+## Private CMS aggregate reports
+
+The owner confirmed `page_view` delivery in GA4 Realtime on 2026-10-26. This completes
+basic measurement setup; it is separate from the optional reporting connection below.
+
+`/[locale]/admin/analytics` is available only in the private CMS. Opening the screen reads
+configuration presence, not Google reports. An authenticated, same-origin button requests
+`POST /v1/admin/analytics/report`. Neither visitors nor form parameters can choose the
+property, date range, dimensions or metrics. The API independently verifies administrator
+claims and limits report requests to 3 per minute.
+
+The report covers the last 28 complete days, filters the configured public hostname, and
+requests only `pagePath`, `screenPageViews`, `activeUsers`, `userEngagementDuration`.
+At most 20 rows are inspected. Private/reserved/non-published paths and rows with fewer
+than 5 active users are omitted. Five users is a minimization threshold, not proof of legal
+anonymity. No eligible rows does not mean zero visits. Google sampling, threshold and
+cardinality limitations are shown. The private table is not a public popularity ranking.
+
+Requests are coalesced and aggregate snapshots expire from process memory after 10 minutes.
+No visitor IDs, session IDs, query text, event timelines, DB tables or HF Bucket writes are
+part of this connector. JSON export is an explicit administrator download; keep it private
+and apply an appropriate retention policy. No LLM calls or automatic content/code edits run.
+
+### One-time Google setup
+
+1. Create or select a Google Cloud project. Enable **Google Analytics Data API**. This connector
+   does not use BigQuery or require a paid analytics subscription.
+2. Create a dedicated service account, for example `archive-analytics-reader`. Do not grant it
+   project-wide Owner or Editor permissions for this task.
+3. In GA4 **Property access management**, add the service account's email as **Viewer** on
+   the intended property. This permission is separate from Google Cloud IAM roles.
+4. Create a JSON key for that service account. Treat the entire file as secret: never commit,
+   paste into chat, include in artifacts, or put it in a `NEXT_PUBLIC_` variable.
+5. In private `archive-core` set these server-only values:
+
+   | Key                               | Place    | Value                                                                                                                    |
+   | --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------ |
+   | `GA4_PROPERTY_ID`                 | Variable | Numeric GA4 property ID, not the `G-` measurement ID                                                                     |
+   | `GA4_SERVICE_ACCOUNT_EMAIL`       | Secret   | JSON `client_email`                                                                                                      |
+   | `GA4_SERVICE_ACCOUNT_PRIVATE_KEY` | Secret   | JSON `private_key`, including its PEM delimiters                                                                         |
+   | `GA4_REPORTING_ENABLED`           | Variable | Keep `false` until access/configuration and processing scope are reviewed; set `true` to permit manual aggregate queries |
+
+   The private key accepts real newlines or escaped `\n`. The existing
+   `ARCHIVE_PUBLIC_SITE_URL` determines the public hostname. No key belongs in Vercel or GitHub
+   for this co-located reporting provider. Existing GA4 browser configuration is unchanged.
+
+6. Open the private CMS, sign in, select Analytics and request a report. Configuration presence
+   is not a successful connection test. Access/API/credential failures are shown without
+   echoing provider errors or credentials. Low traffic can legitimately show no eligible rows.
+
+Use a dedicated key, rotate/revoke through Google when necessary, update the Space Secret
+and restart the runtime. If organization policy prohibits service-account keys, use an
+approved workload-identity/OAuth design rather than disabling that policy.
+
+### Remaining analytics work
+
+- Implemented: opt-in GA4, tab-only reading adaptation, private aggregate reporting connector.
+- Operator setup pending: Google read-only report credentials and the first real report query.
+- Deferred: section-level measurement, behavioral transition snapshots, model training,
+  inferred intent/occupation, content-review models and automatic editing agents.
+- Retained but disabled: first-party raw activity capture and the private HF activity Bucket.
+
+See [capability and extension boundaries](../architecture/analytics-capabilities.md) before
+expanding collection. New detailed events, exports or personalization purposes require an
+appropriate notice/consent/retention review; the existing GA4 consent is not an unlimited
+permission to build visitor profiles.
+
+Official references: [Data API quickstart](https://developers.google.com/analytics/devguides/reporting/data/v1/quickstart),
+[runReport](https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/properties/runReport),
+[quotas](https://developers.google.com/analytics/devguides/reporting/data/v1/quotas).

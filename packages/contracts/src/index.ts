@@ -766,3 +766,33 @@ export function isReservedPublicationPath(path: string): boolean {
     segments.some((segment) => segment === "." || segment === "..")
   );
 }
+
+/** Administrator-only, aggregate reporting; never an event export or a visitor profile. */
+export const AnalyticsConnectionSchema = Type.Object({
+  enabled: Type.Boolean(),
+  configured: Type.Boolean(),
+  rangeDays: Type.Literal(28),
+  cacheMinutes: Type.Literal(10),
+  minimumUsers: Type.Literal(5),
+});
+export type AnalyticsConnection = Static<typeof AnalyticsConnectionSchema>;
+export const AnalyticsReportSchema = Type.Object({
+  generatedAt: Type.String({ format: "date-time" }),
+  cached: Type.Boolean(),
+  rangeDays: Type.Literal(28),
+  minimumUsers: Type.Literal(5),
+  omittedRows: Type.Integer({ minimum: 0 }),
+  quality: Type.Array(
+    Type.Union([Type.Literal("sampled"), Type.Literal("thresholded"), Type.Literal("cardinality")]),
+  ),
+  pages: Type.Array(
+    Type.Object({
+      path: Type.String({ maxLength: 2048 }),
+      views: Type.Integer({ minimum: 0 }),
+      activeUsers: Type.Integer({ minimum: 5 }),
+      engagementSeconds: Type.Number({ minimum: 0 }),
+    }),
+    { maxItems: 20 },
+  ),
+});
+export type AnalyticsReport = Static<typeof AnalyticsReportSchema>;

@@ -106,3 +106,30 @@ test("studio navigation, job requests and mobile layout remain usable", async ({
     page.getByText("비밀값은 Space Secrets에서 관리합니다.", { exact: false }),
   ).toBeVisible();
 });
+
+test("analytics reports are private, manually requested and contain only page aggregates", async ({
+  page,
+  request,
+}) => {
+  await page.goto(`${base}/ko/admin/analytics`);
+  await expect(page).toHaveURL(/admin\/login$/);
+  await signIn(page);
+  await page.getByRole("link", { name: /^방문 분석/ }).click();
+  await expect(page.getByRole("heading", { name: "방문 분석", exact: true })).toBeVisible();
+  let calls = await (await request.get("http://127.0.0.1:17762/__fixtures/requests")).json();
+  expect(
+    calls.requests.some((call: { path: string }) => call.path === "/v1/admin/analytics/report"),
+  ).toBe(false);
+  await page.getByRole("button", { name: "최근 28일 집계 불러오기" }).click();
+  await expect(page.getByRole("region", { name: "GA4 집계 결과" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "120", exact: true })).toBeVisible();
+  const downloadEvent = page.waitForEvent("download");
+  await page.getByRole("button", { name: "JSON 요약 저장" }).click();
+  expect((await downloadEvent).suggestedFilename()).toBe("marchivej-aggregate-report.json");
+  calls = await (await request.get("http://127.0.0.1:17762/__fixtures/requests")).json();
+  expect(
+    calls.requests.filter((call: { path: string }) => call.path === "/v1/admin/analytics/report"),
+  ).toHaveLength(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("studio-analytics.png"), fullPage: true });
+});

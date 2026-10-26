@@ -88,6 +88,28 @@ const fixture = createServer(async (request, response) => {
     if (path === "/auth/v1/user") return json(response, 200, user(true));
     if (path === "/auth/v1/logout") return json(response, 200, {});
     if (!request.headers.authorization?.startsWith("Bearer ")) return json(response, 401, {});
+    if (path === "/v1/admin/analytics")
+      return json(response, 200, {
+        enabled: true,
+        configured: true,
+        rangeDays: 28,
+        cacheMinutes: 10,
+        minimumUsers: 5,
+      });
+    if (path === "/v1/admin/analytics/report") {
+      requests.push({ method: request.method, path });
+      return json(response, 200, {
+        generatedAt: new Date().toISOString(),
+        cached: false,
+        rangeDays: 28,
+        minimumUsers: 5,
+        omittedRows: 2,
+        quality: [],
+        pages: [
+          { path: "/ko/docs/retrieval", views: 120, activeUsers: 20, engagementSeconds: 600 },
+        ],
+      });
+    }
     if (path === "/v1/admin/contents")
       return json(response, 200, {
         items: [...identities.values()].filter(

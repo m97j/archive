@@ -36,11 +36,15 @@ export default async function LocaleLayout({
           </Link>
           <Link href={`/${locale}/admin/jobs`}>
             {copy.jobs}
-            <span>02</span>
+            <span>03</span>
+          </Link>
+          <Link href={`/${locale}/admin/analytics`}>
+            {locale === "ko" ? "방문 분석" : "Analytics"}
+            <span>04</span>
           </Link>
           <Link href={`/${locale}/admin/integrations`}>
             {copy.integrations}
-            <span>03</span>
+            <span>05</span>
           </Link>
         </nav>
         <div className="sidebar-bottom">

@@ -29,6 +29,8 @@ import {
 } from "@archive/db";
 import { knowledgeProviderFromEnvironment, ProviderError } from "@archive/content-engine";
 
+import { LOCALES, type Locale } from "@archive/contracts";
+import { createGoogleAnalyticsReporting } from "./services/google-analytics.js";
 import { buildApp } from "./app.js";
 import { createJwtAuthenticator } from "./plugins/auth.js";
 import { createR2MediaStorage } from "./services/media-storage.js";
@@ -91,6 +93,21 @@ async function main(): Promise<void> {
       },
       listJobs: () => listAdminJobs(database.db),
     },
+    analytics: createGoogleAnalyticsReporting({
+      environment: process.env,
+      isPublicPath: async (path) => {
+        const locale = path.split("/")[1];
+        if (!LOCALES.some((value) => value === locale)) return false;
+        if (
+          path === `/${locale}` ||
+          path === `/${locale}/archive` ||
+          new RegExp(`^/${locale}/spaces/(about|work|research|docs|logs)$`).test(path)
+        )
+          return true;
+        const resolved = await resolvePublicContent(database.db, locale as Locale, path);
+        return resolved?.type === "document" && resolved.path === path;
+      },
+    }),
     search: createHybridSearch({
       ...(provider ? { provider } : {}),
       lexical: async (input) =>

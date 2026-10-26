@@ -42,8 +42,8 @@ export default async function Integrations({ params }: { params: Promise<{ local
       </div>
       <div className="studio-note">
         {locale === "ko"
-          ? "AI 제공자·R2·private dataset 연결은 API/worker 환경에서 관리합니다. 사이트 배치 편집과 행동 분석은 아직 구현하지 않았으며 별도 발행 모델과 동의 정책이 필요합니다."
-          : "AI providers, R2 and private datasets are configured in the API/worker environment. Layout editing and behavioral analysis are not implemented; they require a separate release model and consent policy."}
+          ? "AI 제공자·R2·private dataset 연결은 API/worker 환경에서 관리합니다. GA4 집계는 방문 분석 화면에서 읽기 전용으로 연결합니다. 사이트 배치 편집과 개인화 모델은 별도 구현·동의 검토가 필요합니다."
+          : "AI providers, R2 and private datasets are configured in the API/worker environment. GA4 aggregates connect read-only through Analytics. Layout editing and personalization models require separate implementation and consent review."}
       </div>
     </section>
   );

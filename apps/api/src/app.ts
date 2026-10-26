@@ -1,4 +1,6 @@
 import {
+  AnalyticsConnectionSchema,
+  AnalyticsReportSchema,
   AdminContentPageSchema,
   AdminContentQuerySchema,
   AttachTagInputSchema,
@@ -110,7 +112,10 @@ export interface PublicationPublisher {
   publish(input: PublishRevisionInput, actor: AuthenticatedActor): Promise<PublishedRevision>;
 }
 
+import type { AnalyticsProvider } from "./services/google-analytics.js";
+
 export interface BuildAppOptions {
+  analytics?: AnalyticsProvider;
   publisher: PublicationPublisher;
   workflow?: {
     createContent(input: CreateContentInput, actor: AuthenticatedActor): Promise<ContentIdentity>;
@@ -252,6 +257,47 @@ export function buildApp(options: BuildAppOptions) {
 
 function registerRoutes(app: FastifyInstance, options: BuildAppOptions): void {
   registerTelemetryRoutes(app);
+  app.get(
+    "/v1/admin/analytics",
+    { schema: { response: { 200: AnalyticsConnectionSchema } } },
+    async (request, reply) => {
+      reply.header("Cache-Control", "private, no-store");
+      await options.authenticate(request);
+      return (
+        options.analytics?.connection() ?? {
+          enabled: false,
+          configured: false,
+          rangeDays: 28,
+          cacheMinutes: 10,
+          minimumUsers: 5,
+        }
+      );
+    },
+  );
+  app.post(
+    "/v1/admin/analytics/report",
+    {
+      schema: {
+        body: Type.Object({}, { additionalProperties: false }),
+        response: { 200: AnalyticsReportSchema, 400: Type.Object({ error: Type.String() }) },
+      },
+      preValidation: async (request, reply) => {
+        // Reject caller-selected queries before the default validator can strip extra keys.
+        reply.header("Cache-Control", "private, no-store");
+        const body = request.body;
+        if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length)
+          return reply.code(400).send({ error: "INVALID_REQUEST" });
+      },
+      config: { rateLimit: { max: 3, timeWindow: 60000 } },
+    },
+    async (request, reply) => {
+      await options.authenticate(request);
+      reply.header("Cache-Control", "private, no-store");
+      if (!options.analytics) throw new ProviderError("ANALYTICS_REPORTING_NOT_CONFIGURED");
+      return options.analytics.report();
+    },
+  );
+
   app.get("/health", async () => ({ status: "ok" as const }));
 
   app.post<{ Body: HybridSearchInput }>(
