@@ -157,7 +157,9 @@
 .popup {
   position: fixed;
   right: max(1.5rem, calc((100vw - var(--max-width)) / 2));
-  bottom: 1.5rem;
+  bottom: calc(1.5rem + var(--analytics-banner-offset, 0px));
+  max-height: calc(100svh - var(--analytics-banner-offset, 0px) - 3rem);
+  overflow-y: auto;
   z-index: 25;
   width: min(23rem, calc(100vw - 3rem));
   padding: 1rem 1.25rem;
@@ -250,7 +252,7 @@
     margin-top: 3rem;
   }
   .popup {
-    bottom: 1rem;
+    bottom: calc(1rem + var(--analytics-banner-offset, 0px));
     right: 1rem;
     width: min(23rem, calc(100vw - 2rem));
   }

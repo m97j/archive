@@ -221,12 +221,7 @@
   }
 }
 
-/* Keep the footer reachable above a non-modal, fixed consent prompt. */
+/* Reserve the measured prompt height so footer controls stay reachable. */
 .site-shell:has(.analytics-banner) {
-  padding-bottom: 21rem;
-}
-@media (min-width: 720px) {
-  .site-shell:has(.analytics-banner) {
-    padding-bottom: 13rem;
-  }
+  padding-bottom: var(--analytics-banner-offset, 21rem);
 }

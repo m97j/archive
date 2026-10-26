@@ -19,6 +19,7 @@ export function GoogleAnalytics({
   settings: GoogleAnalyticsSettings;
   locale: string;
 }) {
+  const banner = useRef<HTMLElement>(null);
   const pathname = usePathname();
   const { enabled, measurementId, origin } = settings;
   const controller = useRef<ReturnType<typeof createAnalyticsController> | null>(null);
@@ -51,10 +52,27 @@ export function GoogleAnalytics({
   useEffect(() => {
     controller.current?.page();
   }, [pathname]);
+  useEffect(() => {
+    if (choice !== "unknown" || !enabled || !banner.current) return;
+    const node = banner.current;
+    const update = () =>
+      document.documentElement.style.setProperty(
+        "--analytics-banner-offset",
+        `${Math.ceil(node.getBoundingClientRect().height) + 32}px`,
+      );
+    update();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : undefined;
+    observer?.observe(node);
+    return () => {
+      observer?.disconnect();
+      document.documentElement.style.removeProperty("--analytics-banner-offset");
+    };
+  }, [choice, enabled]);
   const decide = (granted: boolean) => setStorageError(!saveAnalyticsChoice(granted));
   if (!settings.enabled || choice !== "unknown") return null;
   return (
     <aside
+      ref={banner}
       className="analytics-banner"
       aria-label={ko ? "선택적 방문 분석" : "Optional visit analytics"}
     >

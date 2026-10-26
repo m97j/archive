@@ -75,6 +75,12 @@ test("end-of-reading hints are optional, non-modal and dismiss for the tab", asy
   await page.keyboard.press("Tab");
   const focusBefore = await page.evaluate(() => document.activeElement?.outerHTML);
   await expect(hint).toBeVisible({ timeout: 25_000 });
+  const prompt = page.getByRole("complementary", { name: "선택적 방문 분석" });
+  if (await prompt.isVisible()) {
+    const hintBox = await hint.boundingBox();
+    const promptBox = await prompt.boundingBox();
+    expect(hintBox && promptBox && hintBox.y + hintBox.height <= promptBox.y).toBe(true);
+  }
   expect(await page.evaluate(() => document.activeElement?.outerHTML)).toBe(focusBefore);
   await page.screenshot({
     path: path.join(
